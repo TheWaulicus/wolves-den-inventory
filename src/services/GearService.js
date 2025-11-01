@@ -95,11 +95,23 @@ class GearService {
    * @returns {Promise<void>}
    */
   async update(id, updates) {
-    await this.collection.doc(id).update({
-      ...updates,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    console.log('✅ Gear item updated:', id);
+    if (this.useFirebase) {
+      await this.collection.doc(id).update({
+        ...updates,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('✅ Gear item updated:', id);
+    } else {
+      // Memory mode
+      const existing = this.memoryStore.get(id);
+      if (existing) {
+        Object.assign(existing, updates);
+        existing.updatedAt = new Date();
+        console.log('✅ Gear item updated (memory):', id);
+      } else {
+        throw new Error('Gear item not found');
+      }
+    }
   }
 
   /**
@@ -118,8 +130,14 @@ class GearService {
    * @returns {Promise<void>}
    */
   async hardDelete(id) {
-    await this.collection.doc(id).delete();
-    console.log('✅ Gear item permanently deleted:', id);
+    if (this.useFirebase) {
+      await this.collection.doc(id).delete();
+      console.log('✅ Gear item permanently deleted:', id);
+    } else {
+      // Memory mode
+      this.memoryStore.delete(id);
+      console.log('✅ Gear item permanently deleted (memory):', id);
+    }
   }
 
   /**
