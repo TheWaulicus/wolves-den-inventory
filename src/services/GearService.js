@@ -5,7 +5,46 @@
 
 class GearService {
   constructor() {
-    this.collection = db.collection('gearItems');
+    // Check if Firebase is properly configured
+    this.useFirebase = false;
+    
+    if (typeof db !== 'undefined' && typeof firebase !== 'undefined') {
+      try {
+        const config = firebase.app().options;
+        if (config.projectId && config.projectId !== 'YOUR_PROJECT_ID') {
+          this.useFirebase = true;
+          this.collection = db.collection('gearItems');
+          console.log('✅ GearService connected to Firebase');
+        }
+      } catch (error) {
+        console.log('⚠️ Firebase not properly configured, using memory mode');
+      }
+    }
+    
+    // In-memory storage fallback
+    this.memoryStore = new Map();
+    
+    if (!this.useFirebase) {
+      console.log('⚠️ GearService running in memory mode (Firebase not configured)');
+      this.initializeMemoryStore();
+    }
+  }
+
+  /**
+   * Initialize in-memory store with sample data
+   */
+  async initializeMemoryStore() {
+    if (typeof SAMPLE_GEAR_DATA !== 'undefined') {
+      for (const itemData of SAMPLE_GEAR_DATA) {
+        const gearItem = new GearItem(itemData);
+        const id = `gear-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        gearItem.id = id;
+        gearItem.createdAt = new Date();
+        gearItem.updatedAt = new Date();
+        this.memoryStore.set(id, gearItem);
+      }
+      console.log(`📦 Loaded ${this.memoryStore.size} sample gear items into memory`);
+    }
   }
 
   /**
