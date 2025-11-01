@@ -267,14 +267,12 @@ class GearManagement {
         </div>
         
         <div class="card-footer">
+          <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); gearManagement.showEditModal('${item.id}')">
+            ✏️ Edit
+          </button>
           <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); gearManagement.showViewModal('${item.id}')">
             👁️ View
           </button>
-          ${item.status === 'available' ? `
-            <button class="btn btn-sm btn-success" onclick="event.stopPropagation(); gearManagement.quickCheckout('${item.id}')">
-              📤 Check Out
-            </button>
-          ` : ''}
         </div>
       </div>
     `;
@@ -386,10 +384,19 @@ class GearManagement {
   }
 
   /**
-   * Show add gear modal (placeholder)
+   * Show add gear modal
    */
   showAddModal() {
-    showInfo('Add gear feature coming in next update!', 'Coming Soon');
+    window.gearForm = new GearForm();
+    gearForm.show();
+  }
+
+  /**
+   * Show edit gear modal
+   */
+  showEditModal(id) {
+    window.gearForm = new GearForm(id);
+    gearForm.show();
   }
 
   /**
@@ -441,6 +448,9 @@ class GearManagement {
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" onclick="gearManagement.closeModal()">Close</button>
+            <button class="btn btn-primary" onclick="gearManagement.closeModal(); gearManagement.showEditModal('${id}')">
+              ✏️ Edit
+            </button>
           </div>
         </div>
       </div>
