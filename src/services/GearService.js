@@ -58,9 +58,20 @@ class GearService {
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
-    const docRef = await this.collection.add(gearItem.toFirestore());
-    console.log('✅ Gear item created:', docRef.id);
-    return docRef.id;
+    if (this.useFirebase) {
+      const docRef = await this.collection.add(gearItem.toFirestore());
+      console.log('✅ Gear item created:', docRef.id);
+      return docRef.id;
+    } else {
+      // Memory mode
+      const id = gearItem.id || `gear-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      gearItem.id = id;
+      gearItem.createdAt = new Date();
+      gearItem.updatedAt = new Date();
+      this.memoryStore.set(id, gearItem);
+      console.log('✅ Gear item created (memory):', id);
+      return id;
+    }
   }
 
   /**
@@ -69,8 +80,12 @@ class GearService {
    * @returns {Promise<GearItem>}
    */
   async getById(id) {
-    const doc = await this.collection.doc(id).get();
-    return GearItem.fromFirestore(doc);
+    if (this.useFirebase) {
+      const doc = await this.collection.doc(id).get();
+      return GearItem.fromFirestore(doc);
+    } else {
+      return this.memoryStore.get(id) || null;
+    }
   }
 
   /**
@@ -113,28 +128,53 @@ class GearService {
    * @returns {Promise<GearItem[]>}
    */
   async getAll(filters = {}) {
-    let query = this.collection;
+    if (this.useFirebase) {
+      let query = this.collection;
 
-    if (filters.status) {
-      query = query.where('status', '==', filters.status);
+      if (filters.status) {
+        query = query.where('status', '==', filters.status);
+      }
+
+      if (filters.gearType) {
+        query = query.where('gearType', '==', filters.gearType);
+      }
+
+      if (filters.condition) {
+        query = query.where('condition', '==', filters.condition);
+      }
+
+      query = query.orderBy('createdAt', 'desc');
+
+      if (filters.limit) {
+        query = query.limit(filters.limit);
+      }
+
+      const snapshot = await query.get();
+      return snapshot.docs.map(doc => GearItem.fromFirestore(doc));
+    } else {
+      // Memory mode
+      let items = Array.from(this.memoryStore.values());
+
+      if (filters.status) {
+        items = items.filter(i => i.status === filters.status);
+      }
+
+      if (filters.gearType) {
+        items = items.filter(i => i.gearType === filters.gearType);
+      }
+
+      if (filters.condition) {
+        items = items.filter(i => i.condition === filters.condition);
+      }
+
+      items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+      if (filters.limit) {
+        items = items.slice(0, filters.limit);
+      }
+
+      return items;
     }
-
-    if (filters.gearType) {
-      query = query.where('gearType', '==', filters.gearType);
-    }
-
-    if (filters.condition) {
-      query = query.where('condition', '==', filters.condition);
-    }
-
-    query = query.orderBy('createdAt', 'desc');
-
-    if (filters.limit) {
-      query = query.limit(filters.limit);
-    }
-
-    const snapshot = await query.get();
-    return snapshot.docs.map(doc => GearItem.fromFirestore(doc));
   }
 
   /**
