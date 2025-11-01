@@ -1,0 +1,258 @@
+/**
+ * GearService
+ * Handles all Firestore operations for gear items
+ */
+
+class GearService {
+  constructor() {
+    this.collection = db.collection('gearItems');
+  }
+
+  /**
+   * Create a new gear item
+   * @param {GearItem} gearItem - GearItem instance
+   * @returns {Promise<string>} Document ID
+   */
+  async create(gearItem) {
+    const validation = gearItem.validate();
+    if (!validation.valid) {
+      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+    }
+
+    const docRef = await this.collection.add(gearItem.toFirestore());
+    console.log('✅ Gear item created:', docRef.id);
+    return docRef.id;
+  }
+
+  /**
+   * Get a gear item by ID
+   * @param {string} id - Document ID
+   * @returns {Promise<GearItem>}
+   */
+  async getById(id) {
+    const doc = await this.collection.doc(id).get();
+    return GearItem.fromFirestore(doc);
+  }
+
+  /**
+   * Update a gear item
+   * @param {string} id - Document ID
+   * @param {Object} updates - Fields to update
+   * @returns {Promise<void>}
+   */
+  async update(id, updates) {
+    await this.collection.doc(id).update({
+      ...updates,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    console.log('✅ Gear item updated:', id);
+  }
+
+  /**
+   * Delete a gear item (soft delete)
+   * @param {string} id - Document ID
+   * @returns {Promise<void>}
+   */
+  async delete(id) {
+    await this.update(id, { status: 'retired' });
+    console.log('✅ Gear item deleted (soft):', id);
+  }
+
+  /**
+   * Hard delete a gear item (permanent)
+   * @param {string} id - Document ID
+   * @returns {Promise<void>}
+   */
+  async hardDelete(id) {
+    await this.collection.doc(id).delete();
+    console.log('✅ Gear item permanently deleted:', id);
+  }
+
+  /**
+   * Get all gear items with optional filters
+   * @param {Object} filters - Query filters
+   * @returns {Promise<GearItem[]>}
+   */
+  async getAll(filters = {}) {
+    let query = this.collection;
+
+    if (filters.status) {
+      query = query.where('status', '==', filters.status);
+    }
+
+    if (filters.gearType) {
+      query = query.where('gearType', '==', filters.gearType);
+    }
+
+    if (filters.condition) {
+      query = query.where('condition', '==', filters.condition);
+    }
+
+    query = query.orderBy('createdAt', 'desc');
+
+    if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
+
+    const snapshot = await query.get();
+    return snapshot.docs.map(doc => GearItem.fromFirestore(doc));
+  }
+
+  /**
+   * Search gear items by text
+   * @param {string} searchTerm - Search term
+   * @returns {Promise<GearItem[]>}
+   */
+  async search(searchTerm) {
+    const allItems = await this.getAll();
+    const term = searchTerm.toLowerCase();
+    
+    return allItems.filter(item => 
+      item.brand.toLowerCase().includes(term) ||
+      item.model.toLowerCase().includes(term) ||
+      item.description.toLowerCase().includes(term) ||
+      item.barcode?.toLowerCase().includes(term) ||
+      item.tags.some(tag => tag.toLowerCase().includes(term))
+    );
+  }
+
+  /**
+   * Get available gear items
+   * @returns {Promise<GearItem[]>}
+   */
+  async getAvailable() {
+    return this.getAll({ status: 'available' });
+  }
+
+  /**
+   * Get checked out gear items
+   * @returns {Promise<GearItem[]>}
+   */
+  async getCheckedOut() {
+    return this.getAll({ status: 'checked-out' });
+  }
+
+  /**
+   * Listen to real-time updates for a gear item
+   * @param {string} id - Document ID
+   * @param {Function} callback - Callback function
+   * @returns {Function} Unsubscribe function
+   */
+  onSnapshot(id, callback) {
+    return this.collection.doc(id).onSnapshot(doc => {
+      const item = GearItem.fromFirestore(doc);
+      callback(item);
+    });
+  }
+
+  /**
+   * Listen to real-time updates for all gear items
+   * @param {Object} filters - Query filters
+   * @param {Function} callback - Callback function
+   * @returns {Function} Unsubscribe function
+   */
+  onSnapshotAll(filters = {}, callback) {
+    let query = this.collection;
+
+    if (filters.status) {
+      query = query.where('status', '==', filters.status);
+    }
+
+    if (filters.gearType) {
+      query = query.where('gearType', '==', filters.gearType);
+    }
+
+    query = query.orderBy('createdAt', 'desc');
+
+    return query.onSnapshot(snapshot => {
+      const items = snapshot.docs.map(doc => GearItem.fromFirestore(doc));
+      callback(items);
+    });
+  }
+
+  /**
+   * Get gear items with pagination
+   * @param {number} pageSize - Number of items per page
+   * @param {Object} lastDoc - Last document from previous page
+   * @returns {Promise<{items: GearItem[], lastDoc: Object}>}
+   */
+  async getPaginated(pageSize = 20, lastDoc = null) {
+    let query = this.collection
+      .orderBy('createdAt', 'desc')
+      .limit(pageSize);
+
+    if (lastDoc) {
+      query = query.startAfter(lastDoc);
+    }
+
+    const snapshot = await query.get();
+    const items = snapshot.docs.map(doc => GearItem.fromFirestore(doc));
+    const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+
+    return { items, lastDoc: lastVisible };
+  }
+
+  /**
+   * Update gear item status when checked out
+   * @param {string} id - Document ID
+   * @param {string} borrowerId - Borrower ID
+   * @returns {Promise<void>}
+   */
+  async checkOut(id, borrowerId) {
+    await this.update(id, {
+      status: 'checked-out',
+      currentBorrower: borrowerId,
+      lastCheckoutDate: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  /**
+   * Update gear item status when returned
+   * @param {string} id - Document ID
+   * @returns {Promise<void>}
+   */
+  async checkIn(id) {
+    await this.update(id, {
+      status: 'available',
+      currentBorrower: null
+    });
+  }
+
+  /**
+   * Generate unique barcode for gear item
+   * @param {string} prefix - Barcode prefix
+   * @returns {string} Unique barcode
+   */
+  generateBarcode(prefix = 'WDI') {
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `${prefix}-${timestamp}-${random}`;
+  }
+
+  /**
+   * Get inventory statistics
+   * @returns {Promise<Object>} Statistics object
+   */
+  async getStatistics() {
+    const allItems = await this.getAll();
+    
+    return {
+      total: allItems.length,
+      available: allItems.filter(i => i.status === 'available').length,
+      checkedOut: allItems.filter(i => i.status === 'checked-out').length,
+      maintenance: allItems.filter(i => i.status === 'maintenance').length,
+      retired: allItems.filter(i => i.status === 'retired').length,
+      byCondition: {
+        new: allItems.filter(i => i.condition === 'new').length,
+        good: allItems.filter(i => i.condition === 'good').length,
+        fair: allItems.filter(i => i.condition === 'fair').length,
+        needsRepair: allItems.filter(i => i.condition === 'needs-repair').length
+      }
+    };
+  }
+}
+
+// Export singleton instance
+if (typeof window !== 'undefined') {
+  window.gearService = new GearService();
+}
