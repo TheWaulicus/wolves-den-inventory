@@ -176,13 +176,16 @@ class Navigation {
   }
 
   async loadGearTypes() {
-    this.pageContainer.innerHTML = `
-      <div class="welcome-message">
-        <h2>⚙️ Gear Types</h2>
-        <p>Gear type management will be loaded here</p>
-        <p class="mt-2">Configure equipment categories and sizes.</p>
-      </div>
-    `;
+    if (typeof gearTypeManager !== 'undefined') {
+      await gearTypeManager.render();
+    } else {
+      this.pageContainer.innerHTML = `
+        <div class="welcome-message">
+          <h2>⚙️ Gear Types</h2>
+          <p>Gear type manager not loaded</p>
+        </div>
+      `;
+    }
   }
 
   async loadSettings() {
