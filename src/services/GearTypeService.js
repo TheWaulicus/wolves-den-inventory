@@ -6,8 +6,22 @@
 
 class GearTypeService {
   constructor() {
-    this.useFirebase = typeof db !== 'undefined';
-    this.collection = this.useFirebase ? db.collection('gearTypes') : null;
+    // Check if Firebase is properly configured (not just initialized)
+    this.useFirebase = false;
+    
+    if (typeof db !== 'undefined' && typeof firebase !== 'undefined') {
+      try {
+        const config = firebase.app().options;
+        // Check if it's a real config (not placeholder)
+        if (config.projectId && config.projectId !== 'YOUR_PROJECT_ID') {
+          this.useFirebase = true;
+          this.collection = db.collection('gearTypes');
+          console.log('✅ GearTypeService connected to Firebase');
+        }
+      } catch (error) {
+        console.log('⚠️ Firebase not properly configured, using memory mode');
+      }
+    }
     
     // In-memory storage fallback
     this.memoryStore = new Map();
@@ -15,8 +29,6 @@ class GearTypeService {
     if (!this.useFirebase) {
       console.log('⚠️ GearTypeService running in memory mode (Firebase not configured)');
       this.initializeMemoryStore();
-    } else {
-      console.log('✅ GearTypeService connected to Firebase');
     }
   }
 
