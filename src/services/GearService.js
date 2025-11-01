@@ -231,22 +231,28 @@ class GearService {
    * @returns {Function} Unsubscribe function
    */
   onSnapshotAll(filters = {}, callback) {
-    let query = this.collection;
+    if (this.useFirebase) {
+      let query = this.collection;
 
-    if (filters.status) {
-      query = query.where('status', '==', filters.status);
+      if (filters.status) {
+        query = query.where('status', '==', filters.status);
+      }
+
+      if (filters.gearType) {
+        query = query.where('gearType', '==', filters.gearType);
+      }
+
+      query = query.orderBy('createdAt', 'desc');
+
+      return query.onSnapshot(snapshot => {
+        const items = snapshot.docs.map(doc => GearItem.fromFirestore(doc));
+        callback(items);
+      });
+    } else {
+      // Memory mode - simulate with initial callback
+      this.getAll(filters).then(items => callback(items));
+      return () => {}; // No-op unsubscribe
     }
-
-    if (filters.gearType) {
-      query = query.where('gearType', '==', filters.gearType);
-    }
-
-    query = query.orderBy('createdAt', 'desc');
-
-    return query.onSnapshot(snapshot => {
-      const items = snapshot.docs.map(doc => GearItem.fromFirestore(doc));
-      callback(items);
-    });
   }
 
   /**
