@@ -1,0 +1,30 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Gear item photos
+    match /gear-photos/{gearId}/{photoId} {
+      // Anyone can read photos
+      allow read: if true;
+      
+      // Only admins can upload/delete photos
+      allow write: if isAdmin() && 
+                      request.resource.size < 5 * 1024 * 1024 && // Max 5MB
+                      request.resource.contentType.matches('image/.*');
+    }
+    
+    // Logo images (team, league)
+    match /logos/{logoId} {
+      allow read: if true;
+      allow write: if isAdmin() && 
+                      request.resource.size < 2 * 1024 * 1024 && // Max 2MB
+                      request.resource.contentType.matches('image/.*');
+    }
+  }
+}

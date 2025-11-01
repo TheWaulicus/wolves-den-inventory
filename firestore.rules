@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    function isBorrower() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/borrowers/$(request.auth.uid));
+    }
+    
+    // Settings collection (read by all, write by admin)
+    match /settings/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Gear items collection
+    match /gearItems/{itemId} {
+      allow read: if true; // Everyone can browse gear
+      allow create, update, delete: if isAdmin();
+      
+      // Subcollection for photos
+      match /photos/{photoId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+    
+    // Gear types collection
+    match /gearTypes/{typeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Borrowers collection
+    match /borrowers/{borrowerId} {
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == borrowerId);
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isAuthenticated() && request.auth.uid == borrowerId);
+      allow delete: if isAdmin();
+    }
+    
+    // Transactions collection
+    match /transactions/{transactionId} {
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && resource.data.borrowerId == request.auth.uid);
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Transaction history (archive)
+    match /transactionHistory/{historyId} {
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && resource.data.borrowerId == request.auth.uid);
+      allow create: if isAdmin();
+      allow update, delete: if false; // History should be immutable
+    }
+    
+    // Admin users collection
+    match /admins/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Managed manually in Firebase Console
+    }
+  }
+}
