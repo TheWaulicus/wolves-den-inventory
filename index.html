@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Wolves Den Inventory - Ice hockey gear management system">
+  <title>🐺 Wolves Den Inventory</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐺</text></svg>">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+
+  <!-- Sidebar Navigation -->
+  <nav id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🐺</span>
+        <span class="logo-text">Wolves Den</span>
+      </div>
+      <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+        <span class="hamburger"></span>
+      </button>
+    </div>
+
+    <div class="sidebar-user" id="sidebar-user">
+      <div class="user-avatar">👤</div>
+      <div class="user-info">
+        <div class="user-name">Admin User</div>
+        <div class="user-role">Administrator</div>
+      </div>
+    </div>
+
+    <ul class="nav-menu">
+      <li class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Dashboard</span>
+      </li>
+      <li class="nav-item" data-page="inventory">
+        <span class="nav-icon">📦</span>
+        <span class="nav-label">Inventory</span>
+        <span class="nav-badge" id="inventory-count">0</span>
+      </li>
+      <li class="nav-item" data-page="borrowers">
+        <span class="nav-icon">👥</span>
+        <span class="nav-label">Borrowers</span>
+      </li>
+      <li class="nav-item" data-page="transactions">
+        <span class="nav-icon">↔️</span>
+        <span class="nav-label">Transactions</span>
+        <span class="nav-badge badge-warning" id="overdue-count">0</span>
+      </li>
+      <li class="nav-divider"></li>
+      <li class="nav-item" data-page="gear-types">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Gear Types</span>
+      </li>
+      <li class="nav-item" data-page="settings">
+        <span class="nav-icon">🔧</span>
+        <span class="nav-label">Settings</span>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <button id="logout-btn" class="btn btn-ghost btn-block">
+        <span>🚪</span>
+        <span>Logout</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main id="main-content" class="main-content">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="mobile-menu-toggle" class="btn btn-icon" aria-label="Menu">
+          <span class="hamburger"></span>
+        </button>
+        <h1 id="page-title" class="page-title">Dashboard</h1>
+      </div>
+      
+      <div class="topbar-right">
+        <button id="search-toggle" class="btn btn-icon" aria-label="Search">
+          <span>🔍</span>
+        </button>
+        <button id="notifications-toggle" class="btn btn-icon" aria-label="Notifications">
+          <span>🔔</span>
+          <span class="notification-dot"></span>
+        </button>
+        <button id="theme-toggle" class="btn btn-icon" aria-label="Toggle theme">
+          <span id="theme-icon">🌙</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Container -->
+    <div id="page-container" class="page-container">
+      <!-- Content will be dynamically loaded here -->
+      <div class="welcome-message">
+        <h2>Welcome to Wolves Den Inventory! 🏒</h2>
+        <p>Loading your dashboard...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modals Container -->
+  <div id="modals-container"></div>
+
+  <!-- Notifications Container -->
+  <div id="notifications-container" class="notifications-container"></div>
+
+  <!-- Firebase Configuration -->
+  <script src="src/firebase-config.js"></script>
+
+  <!-- Models -->
+  <script src="src/models/GearItem.js"></script>
+  <script src="src/models/Borrower.js"></script>
+  <script src="src/models/Transaction.js"></script>
+  <script src="src/models/GearType.js"></script>
+
+  <!-- Services -->
+  <script src="src/services/GearService.js"></script>
+  <script src="src/services/BorrowerService.js"></script>
+  <script src="src/services/TransactionService.js"></script>
+
+  <!-- Utilities -->
+  <script src="src/utils/validators.js"></script>
+  <script src="src/utils/dateHelpers.js"></script>
+  <script src="src/utils/formatters.js"></script>
+
+  <!-- UI Components (will be created in Phase 2) -->
+  <script src="src/ui/NotificationSystem.js"></script>
+  <script src="src/ui/Navigation.js"></script>
+  
+  <!-- Main App -->
+  <script src="src/app.js"></script>
+</body>
+</html>

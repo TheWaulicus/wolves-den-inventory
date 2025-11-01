@@ -3,6 +3,7 @@
 ## Project-Specific Guidelines
 
 ### Technology Stack
+
 - **Firebase Firestore**: NoSQL database with real-time sync
 - **Firebase Storage**: Photo and image storage
 - **Firebase Authentication**: Email/password authentication
@@ -13,6 +14,7 @@
 ### Code Standards
 
 #### JavaScript
+
 - Use **ES6+ features** (arrow functions, destructuring, async/await)
 - **camelCase** for variables, functions, method names
 - **PascalCase** for class names
@@ -22,6 +24,7 @@
 - Add JSDoc comments for all functions and classes
 
 #### File Organization
+
 ```
 src/
 ├── models/          # Data models (GearItem, Borrower, Transaction)
@@ -33,11 +36,12 @@ src/
 ```
 
 #### Firebase Patterns (from meerkats_board)
+
 ```javascript
 // Real-time listeners
-db.collection('gearItems')
-  .where('status', '==', 'available')
-  .onSnapshot(snapshot => {
+db.collection("gearItems")
+  .where("status", "==", "available")
+  .onSnapshot((snapshot) => {
     // Handle updates
   });
 
@@ -63,6 +67,7 @@ await batch.commit();
 ### Naming Conventions
 
 #### Collections
+
 - `gearItems` - Individual gear pieces
 - `gearTypes` - Equipment categories
 - `borrowers` - Players/staff
@@ -70,9 +75,11 @@ await batch.commit();
 - `transactionHistory` - Completed lending
 
 #### Status Values
+
 - Use lowercase with hyphens: `checked-out`, `needs-repair`, `returned`
 
 #### File Names
+
 - Components: `GearManagement.js`, `PhotoUpload.js`
 - Services: `GearService.js`, `PhotoService.js`
 - Utils: `validators.js`, `formatters.js`, `dateHelpers.js`
@@ -134,11 +141,13 @@ firebase deploy
 ### Phase-Specific Notes
 
 #### Phase 1 (Complete)
+
 - ✅ Models, services, utilities implemented
 - ✅ 1,685 lines of code
 - ✅ Validation and Firestore integration
 
 #### Phase 2 (Current)
+
 - Focus: Inventory Management UI
 - Key components: GearManagement, PhotoUpload, Search/Filter
 - Priority: Real-time updates, photo management, barcode generation
@@ -146,42 +155,44 @@ firebase deploy
 ### Common Patterns
 
 #### Service Layer
+
 ```javascript
 class MyService {
   constructor() {
-    this.collection = db.collection('myCollection');
+    this.collection = db.collection("myCollection");
   }
-  
+
   async create(item) {
     const validation = item.validate();
-    if (!validation.valid) throw new Error(validation.errors.join(', '));
+    if (!validation.valid) throw new Error(validation.errors.join(", "));
     const docRef = await this.collection.add(item.toFirestore());
     return docRef.id;
   }
-  
+
   onSnapshot(filters, callback) {
     let query = this.collection;
-    if (filters.status) query = query.where('status', '==', filters.status);
-    return query.onSnapshot(snapshot => {
-      callback(snapshot.docs.map(doc => Item.fromFirestore(doc)));
+    if (filters.status) query = query.where("status", "==", filters.status);
+    return query.onSnapshot((snapshot) => {
+      callback(snapshot.docs.map((doc) => Item.fromFirestore(doc)));
     });
   }
 }
 ```
 
 #### UI Components
+
 ```javascript
 function renderComponent(containerId, data) {
   const container = document.getElementById(containerId);
   container.innerHTML = `
     <div class="component">
-      ${data.map(item => `<div class="item">${item.name}</div>`).join('')}
+      ${data.map((item) => `<div class="item">${item.name}</div>`).join("")}
     </div>
   `;
-  
+
   // Attach event listeners
-  container.querySelectorAll('.item').forEach(el => {
-    el.addEventListener('click', handleClick);
+  container.querySelectorAll(".item").forEach((el) => {
+    el.addEventListener("click", handleClick);
   });
 }
 ```
@@ -191,10 +202,10 @@ function renderComponent(containerId, data) {
 ```javascript
 try {
   await service.create(item);
-  showNotification('Success!', 'success');
+  showNotification("Success!", "success");
 } catch (error) {
-  console.error('Error:', error);
-  showNotification(error.message, 'error');
+  console.error("Error:", error);
+  showNotification(error.message, "error");
 }
 ```
 
@@ -202,16 +213,16 @@ try {
 
 ```javascript
 const COLLECTION_NAMES = {
-  GEAR_ITEMS: 'gearItems',
-  BORROWERS: 'borrowers',
-  TRANSACTIONS: 'transactions'
+  GEAR_ITEMS: "gearItems",
+  BORROWERS: "borrowers",
+  TRANSACTIONS: "transactions",
 };
 
 const STATUS = {
-  AVAILABLE: 'available',
-  CHECKED_OUT: 'checked-out',
-  MAINTENANCE: 'maintenance',
-  RETIRED: 'retired'
+  AVAILABLE: "available",
+  CHECKED_OUT: "checked-out",
+  MAINTENANCE: "maintenance",
+  RETIRED: "retired",
 };
 ```
 
@@ -233,3 +244,4 @@ const STATUS = {
 - Comment complex logic, not obvious code
 - Performance matters - optimize queries and reduce re-renders
 - User experience is paramount - fast, responsive, intuitive
+- Always update AGENTS.md with new information when required
