@@ -146,13 +146,16 @@ class Navigation {
   }
 
   async loadInventory() {
-    this.pageContainer.innerHTML = `
-      <div class="welcome-message">
-        <h2>📦 Inventory Management</h2>
-        <p>Inventory management interface will be loaded here</p>
-        <p class="mt-2">Add, edit, and manage all your hockey gear.</p>
-      </div>
-    `;
+    if (typeof gearManagement !== 'undefined') {
+      await gearManagement.render();
+    } else {
+      this.pageContainer.innerHTML = `
+        <div class="welcome-message">
+          <h2>📦 Inventory Management</h2>
+          <p>Gear management not loaded</p>
+        </div>
+      `;
+    }
   }
 
   async loadBorrowers() {
