@@ -4,7 +4,6 @@
  */
 
 class GearItem {
-  static VALID_CONDITIONS = ['new', 'good', 'fair', 'needs-repair', 'retired'];
   static VALID_STATUSES = ['available', 'checked-out', 'maintenance', 'retired'];
 
   constructor(data = {}) {
@@ -13,14 +12,12 @@ class GearItem {
     this.brand = data.brand || '';
     this.model = data.model || '';
     this.size = data.size || '';
-    this.condition = data.condition || 'good';
     this.status = data.status || 'available';
     this.purchaseDate = data.purchaseDate || null;
     this.purchaseCost = data.purchaseCost || null;
     this.description = data.description || '';
     this.notes = data.notes || '';
     this.barcode = data.barcode || null;
-    this.location = data.location || '';
     this.photoCount = data.photoCount || 0;
     this.currentBorrower = data.currentBorrower || null;
     this.lastCheckoutDate = data.lastCheckoutDate || null;
@@ -37,11 +34,9 @@ class GearItem {
       brand: this.brand,
       model: this.model,
       size: this.size,
-      condition: this.condition,
       status: this.status,
       description: this.description,
       notes: this.notes,
-      location: this.location,
       photoCount: this.photoCount,
       tags: this.tags,
       customFields: this.customFields,
@@ -85,10 +80,6 @@ class GearItem {
 
     if (!this.brand || this.brand.trim() === '') {
       errors.push('Brand is required');
-    }
-
-    if (!GearItem.VALID_CONDITIONS.includes(this.condition)) {
-      errors.push(`Condition must be one of: ${GearItem.VALID_CONDITIONS.join(', ')}`);
     }
 
     if (!GearItem.VALID_STATUSES.includes(this.status)) {

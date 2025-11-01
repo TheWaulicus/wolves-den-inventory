@@ -10,8 +10,7 @@ class GearManagement {
     this.filters = {
       search: '',
       gearType: '',
-      status: '',
-      condition: ''
+      status: ''
     };
     this.viewMode = 'grid'; // 'grid' or 'table'
   }
@@ -45,7 +44,7 @@ class GearManagement {
         <!-- Search and Filters -->
         <div class="card mb-3">
           <div class="card-body">
-            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem;">
               <!-- Search -->
               <div class="search-bar">
                 <span class="search-icon">🔍</span>
@@ -74,14 +73,6 @@ class GearManagement {
                 <option value="retired">Retired</option>
               </select>
 
-              <!-- Condition Filter -->
-              <select class="form-select" id="filter-condition" onchange="gearManagement.handleFilterChange()">
-                <option value="">All Conditions</option>
-                <option value="new">New</option>
-                <option value="good">Good</option>
-                <option value="fair">Fair</option>
-                <option value="needs-repair">Needs Repair</option>
-              </select>
             </div>
 
             <!-- View Mode Toggle -->
@@ -243,11 +234,6 @@ class GearManagement {
         return false;
       }
 
-      // Condition filter
-      if (this.filters.condition && item.condition !== this.filters.condition) {
-        return false;
-      }
-
       return true;
     });
   }
@@ -276,10 +262,7 @@ class GearManagement {
               ${item.size ? `<span class="badge badge-neutral">📏 ${item.size}</span>` : ''}
             </div>
 
-            <div style="font-size: 0.875rem; color: var(--color-text-secondary);">
-              ${item.barcode ? `<div>🔖 ${item.barcode}</div>` : ''}
-              ${item.location ? `<div>📍 ${item.location}</div>` : ''}
-            </div>
+            ${item.barcode ? `<div style="font-size: 0.875rem; color: var(--color-text-secondary);">🔖 ${item.barcode}</div>` : ''}
           </div>
         </div>
         
@@ -310,8 +293,7 @@ class GearManagement {
               <th>Brand / Model</th>
               <th>Size</th>
               <th>Status</th>
-              <th>Condition</th>
-              <th>Location</th>
+              <th>Barcode</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -336,8 +318,7 @@ class GearManagement {
         <td><strong>${item.brand}</strong> ${item.model}</td>
         <td>${item.size || '-'}</td>
         <td><span class="badge badge-${this.getStatusClass(item.status)}">${item.status}</span></td>
-        <td>${Formatters.formatCondition(item.condition)}</td>
-        <td>${item.location || '-'}</td>
+        <td>${item.barcode || '-'}</td>
         <td onclick="event.stopPropagation()">
           <button class="btn btn-sm btn-ghost" onclick="gearManagement.showViewModal('${item.id}')">
             View
@@ -392,7 +373,6 @@ class GearManagement {
   handleFilterChange() {
     this.filters.gearType = document.getElementById('filter-gear-type').value;
     this.filters.status = document.getElementById('filter-status').value;
-    this.filters.condition = document.getElementById('filter-condition').value;
     
     this.renderGearItemsList();
   }
@@ -445,21 +425,11 @@ class GearManagement {
                 <label class="form-label">Status</label>
                 <div><span class="badge badge-${this.getStatusClass(item.status)}">${item.status}</span></div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Condition</label>
-                <div>${Formatters.formatCondition(item.condition)}</div>
-              </div>
             </div>
             ${item.barcode ? `
               <div class="form-group">
                 <label class="form-label">Barcode</label>
                 <div>${item.barcode}</div>
-              </div>
-            ` : ''}
-            ${item.location ? `
-              <div class="form-group">
-                <label class="form-label">Location</label>
-                <div>${item.location}</div>
               </div>
             ` : ''}
             ${item.description ? `
