@@ -174,7 +174,7 @@ class Dashboard {
                 <div class="activity-details">
                   <div class="activity-title">${trans.borrowerName}</div>
                   <div class="activity-subtitle">${trans.gearBrand} ${trans.gearType}</div>
-                  <div class="activity-date">${formatDate(trans.checkoutDate)}</div>
+                  <div class="activity-date">${DateHelpers.formatReadable(trans.checkoutDate)}</div>
                 </div>
                 <span class="badge badge-${trans.status === 'overdue' ? 'error' : 'warning'}">
                   ${trans.status}
@@ -205,7 +205,7 @@ class Dashboard {
                 <div class="activity-details">
                   <div class="activity-title">${trans.borrowerName}</div>
                   <div class="activity-subtitle">${trans.gearBrand} ${trans.gearType}</div>
-                  <div class="activity-date">Due: ${formatDate(trans.dueDate)}</div>
+                  <div class="activity-date">Due: ${DateHelpers.formatReadable(trans.dueDate)}</div>
                 </div>
               </div>
             `).join('')}
