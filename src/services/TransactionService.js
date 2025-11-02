@@ -88,32 +88,61 @@ class TransactionService {
   }
 
   async getAll(filters = {}) {
-    let query = this.collection;
+    if (this.useFirebase) {
+      let query = this.collection;
 
-    if (filters.status) {
-      query = query.where('status', '==', filters.status);
+      if (filters.status) {
+        query = query.where('status', '==', filters.status);
+      }
+
+      if (filters.borrowerId) {
+        query = query.where('borrowerId', '==', filters.borrowerId);
+      }
+
+      if (filters.gearItemId) {
+        query = query.where('gearItemId', '==', filters.gearItemId);
+      }
+
+      if (filters.isOverdue !== undefined) {
+        query = query.where('isOverdue', '==', filters.isOverdue);
+      }
+
+      query = query.orderBy('checkoutDate', 'desc');
+
+      if (filters.limit) {
+        query = query.limit(filters.limit);
+      }
+
+      const snapshot = await query.get();
+      return snapshot.docs.map(doc => Transaction.fromFirestore(doc));
+    } else {
+      // Memory mode
+      let transactions = Array.from(this.memoryStore.values());
+
+      if (filters.status) {
+        transactions = transactions.filter(t => t.status === filters.status);
+      }
+
+      if (filters.borrowerId) {
+        transactions = transactions.filter(t => t.borrowerId === filters.borrowerId);
+      }
+
+      if (filters.gearItemId) {
+        transactions = transactions.filter(t => t.gearItemId === filters.gearItemId);
+      }
+
+      if (filters.isOverdue !== undefined) {
+        transactions = transactions.filter(t => t.isOverdue === filters.isOverdue);
+      }
+
+      transactions.sort((a, b) => (b.checkoutDate || 0) - (a.checkoutDate || 0));
+
+      if (filters.limit) {
+        transactions = transactions.slice(0, filters.limit);
+      }
+
+      return transactions;
     }
-
-    if (filters.borrowerId) {
-      query = query.where('borrowerId', '==', filters.borrowerId);
-    }
-
-    if (filters.gearItemId) {
-      query = query.where('gearItemId', '==', filters.gearItemId);
-    }
-
-    if (filters.isOverdue !== undefined) {
-      query = query.where('isOverdue', '==', filters.isOverdue);
-    }
-
-    query = query.orderBy('checkoutDate', 'desc');
-
-    if (filters.limit) {
-      query = query.limit(filters.limit);
-    }
-
-    const snapshot = await query.get();
-    return snapshot.docs.map(doc => Transaction.fromFirestore(doc));
   }
 
   async getActive() {
