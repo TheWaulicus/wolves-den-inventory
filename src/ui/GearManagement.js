@@ -273,6 +273,11 @@ class GearManagement {
           <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); gearManagement.showViewModal('${item.id}')">
             👁️ View
           </button>
+          ${item.status === 'available' ? `
+            <button class="btn btn-sm btn-success" onclick="event.stopPropagation(); gearManagement.quickCheckout('${item.id}')">
+              📤 Check Out
+            </button>
+          ` : ''}
         </div>
       </div>
     `;
@@ -460,10 +465,11 @@ class GearManagement {
   }
 
   /**
-   * Quick checkout (placeholder)
+   * Quick checkout
    */
   quickCheckout(id) {
-    showInfo('Quick checkout feature coming soon!', 'Coming Soon');
+    window.quickCheckout = new QuickCheckout(id);
+    quickCheckout.show();
   }
 
   /**
