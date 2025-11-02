@@ -1,0 +1,61 @@
+Section,Category,Size,Quantity
+Junior,Chest Armour,Small,5
+Junior,Chest Armour,Medium,1
+Junior,Chest Armour,Large,3
+Junior,Elbows,Small,1
+Junior,Elbows,Medium,1
+Junior,Elbows,Large,1
+Junior,Hockey Pants,Small,3
+Junior,Hockey Pants,Medium,1
+Senior,Chest Armour,Small,2
+Senior,Chest Armour,Medium,1
+Senior,Chest Armour,Large,1
+Senior,Chest Armour,X-Large,2
+Senior,Chest Armour,No Size,3
+Senior,Elbows,Small,1
+Senior,Elbows,Medium,1
+Senior,Elbows,Large,3
+Senior,Hockey Pants,Large,2
+Senior,Hockey Pants,X-Large,1
+Senior,Hockey Pants,No Size,2
+Goalie,Chest Armour - Senior,Small,2
+Goalie,Chest Armour - Senior,Large,1
+Goalie,Chest Armour - Senior,X-Large,2
+Goalie,Chest Armour - Int,Large,2
+Goalie,Chest Armour - Int,No Size,3
+Goalie,Goalie Pants,Medium,1
+Goalie,Goalie Helmets,10,1
+Goalie,Goalie Pads - Jr,26" + 1",1
+Goalie,Chest Armour - Jr,Junior,1
+General,Shin Pads,10",1
+General,Shin Pads,11",3
+General,Shin Pads,12",2
+General,Shin Pads,13",3
+General,Shin Pads,14",4
+General,Shin Pads,15",2
+General,Shin Pads,16",3
+General,Hockey Skates,1,1
+General,Hockey Skates,2,1
+General,Hockey Skates,2.5,1
+General,Hockey Skates,3,3
+General,Hockey Skates,4,1
+General,Hockey Skates,6,2
+General,Hockey Skates,7,1
+General,Hockey Skates,7.5,2
+General,Hockey Skates,9.5,1
+General,Hockey Skates,Not sure (Goalie),1
+General,Hockey Skates,5 (Goalie),1
+General,Hockey Skates,10 (Goalie),1
+General,Gloves,11",1
+General,Gloves,12",1
+General,Gloves,13",5
+General,Gloves,14",1
+General,Gloves,14.5",1
+General,Gloves,15",1
+Helmets,Helmets - Youth,Small,1
+Helmets,Helmets - Youth,Medium,2
+Helmets,Helmets - Adult,Small,2
+Helmets,Helmets - Adult,Medium,1
+Helmets,Helmets - Adult,Large,2
+Helmets,Metal Cages,,7
+Helmets,Clear Visor,,1
