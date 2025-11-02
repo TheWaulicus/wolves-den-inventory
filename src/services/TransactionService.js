@@ -367,15 +367,28 @@ class TransactionService {
       throw new Error('Only returned transactions can be archived');
     }
 
-    const historyData = {
-      ...transactionDoc.toFirestore(),
-      archivedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      completedAt: transactionDoc.returnDate
-    };
+    if (this.useFirebase) {
+      const historyData = {
+        ...transactionDoc.toFirestore(),
+        archivedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        completedAt: transactionDoc.returnDate
+      };
 
-    await this.historyCollection.doc(transactionId).set(historyData);
-    await this.collection.doc(transactionId).delete();
-    console.log('✅ Transaction moved to history:', transactionId);
+      await this.historyCollection.doc(transactionId).set(historyData);
+      await this.collection.doc(transactionId).delete();
+      console.log('✅ Transaction moved to history:', transactionId);
+    } else {
+      // Memory mode
+      const historyData = {
+        ...transactionDoc,
+        archivedAt: new Date(),
+        completedAt: transactionDoc.returnDate
+      };
+      
+      this.historyStore.set(transactionId, historyData);
+      this.memoryStore.delete(transactionId);
+      console.log('✅ Transaction moved to history (memory):', transactionId);
+    }
   }
 
   /**
@@ -387,52 +400,83 @@ class TransactionService {
     const now = new Date();
     let overdueCount = 0;
 
-    const batch = db.batch();
+    if (this.useFirebase) {
+      const batch = db.batch();
 
-    activeTransactions.forEach(trans => {
-      if (trans.dueDate && now > trans.dueDate) {
-        const ref = this.collection.doc(trans.id);
-        batch.update(ref, {
-          status: 'overdue',
-          isOverdue: true,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        overdueCount++;
+      activeTransactions.forEach(trans => {
+        if (trans.dueDate && now > trans.dueDate) {
+          const ref = this.collection.doc(trans.id);
+          batch.update(ref, {
+            status: 'overdue',
+            isOverdue: true,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          overdueCount++;
+        }
+      });
+
+      if (overdueCount > 0) {
+        await batch.commit();
+        console.log(`✅ Marked ${overdueCount} transactions as overdue`);
       }
-    });
-
-    if (overdueCount > 0) {
-      await batch.commit();
-      console.log(`✅ Marked ${overdueCount} transactions as overdue`);
+    } else {
+      // Memory mode
+      for (const trans of activeTransactions) {
+        if (trans.dueDate && now > trans.dueDate) {
+          await this.update(trans.id, {
+            status: 'overdue',
+            isOverdue: true
+          });
+          overdueCount++;
+        }
+      }
+      
+      if (overdueCount > 0) {
+        console.log(`✅ Marked ${overdueCount} transactions as overdue (memory)`);
+      }
     }
 
     return overdueCount;
   }
 
   onSnapshot(id, callback) {
-    return this.collection.doc(id).onSnapshot(doc => {
-      const transaction = Transaction.fromFirestore(doc);
-      callback(transaction);
-    });
+    if (this.useFirebase) {
+      return this.collection.doc(id).onSnapshot(doc => {
+        const transaction = Transaction.fromFirestore(doc);
+        callback(transaction);
+      });
+    } else {
+      // Memory mode - simulate with initial callback
+      this.getById(id).then(transaction => {
+        if (transaction) callback(transaction);
+      });
+      return () => {}; // No-op unsubscribe
+    }
   }
 
   onSnapshotAll(filters = {}, callback) {
-    let query = this.collection;
+    if (this.useFirebase) {
+      let query = this.collection;
 
-    if (filters.status) {
-      query = query.where('status', '==', filters.status);
+      if (filters.status) {
+        query = query.where('status', '==', filters.status);
+      }
+
+      if (filters.borrowerId) {
+        query = query.where('borrowerId', '==', filters.borrowerId);
+      }
+
+      query = query.orderBy('checkoutDate', 'desc');
+
+      return query.onSnapshot(snapshot => {
+        const transactions = snapshot.docs.map(doc => Transaction.fromFirestore(doc));
+        callback(transactions);
+      });
+    } else {
+      // Memory mode - simulate with initial callback
+      this.getAll(filters).then(transactions => callback(transactions));
+      return () => {}; // No-op unsubscribe
     }
-
-    if (filters.borrowerId) {
-      query = query.where('borrowerId', '==', filters.borrowerId);
-    }
-
-    query = query.orderBy('checkoutDate', 'desc');
-
-    return query.onSnapshot(snapshot => {
-      const transactions = snapshot.docs.map(doc => Transaction.fromFirestore(doc));
-      callback(transactions);
-    });
   }
 
   async getStatistics() {
