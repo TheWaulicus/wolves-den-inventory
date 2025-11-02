@@ -2,9 +2,11 @@
 
 Ice hockey gear inventory management system for the **Ice Zoo Wolves**.
 
-🌐 **Live Demo**: [https://thewaulicus.github.io/wolves-den-inventory/](https://thewaulicus.github.io/wolves-den-inventory/)
+🌐 **Live Application**: [https://thewaulicus.github.io/wolves-den-inventory/](https://thewaulicus.github.io/wolves-den-inventory/)
 
-> **Note**: The live demo runs in memory mode (no Firebase configuration). All data is stored locally in your browser and will be reset on page reload.
+🔥 **Firebase Project**: `wolves-den-8bb09` (Fully configured and deployed)
+
+> **Status**: Production-ready with Firebase Firestore, Storage, and Authentication enabled. Real inventory data loaded and operational.
 
 [![Firebase](https://img.shields.io/badge/Firebase-v8-orange)](https://firebase.google.com/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
@@ -16,46 +18,92 @@ A comprehensive web-based system for managing hockey gear inventory and lending 
 
 ## ✨ Features
 
-### 📦 Inventory Management
-- Track all hockey gear (skates, helmets, pads, sticks, etc.)
-- Multiple photos per item
-- Condition tracking (new, good, fair, needs repair, retired)
-- Barcode/QR code generation
-- Size and brand tracking
-- Real-time availability status
+### ✅ Implemented & Deployed
 
-### 👥 Borrower Management
-- Player and staff profiles
-- Contact information management
-- Borrowing history tracking
-- Borrowing limits and restrictions
-- Status management (active, suspended)
+#### 📦 Inventory Management
+- ✅ Track all hockey gear (20+ items loaded)
+- ✅ Condition tracking (new, good, fair, needs repair, retired)
+- ✅ Size and brand tracking
+- ✅ Real-time availability status
+- ✅ Search and filter by type, status, size
+- ✅ Add, edit, delete operations
+- 🚧 Multiple photos per item (Storage ready, UI pending)
+- 🚧 Barcode/QR code generation (planned)
 
-### ↔️ Lending System
-- Check-out/check-in workflow
-- Due date tracking
-- Overdue detection
-- Condition assessment on return
-- Transaction history
-- Email notifications
+#### 👥 Borrower Management
+- ✅ Player and staff profiles (full CRUD)
+- ✅ Contact information management
+- ✅ Borrowing limits and restrictions
+- ✅ Status management (active, suspended, inactive)
+- ✅ Team role tracking (player, coach, staff, volunteer)
+- ✅ Search and filter functionality
+- 🚧 Borrowing history tracking (basic, can be enhanced)
 
-### 📊 Reporting & Analytics
-- Dashboard with key metrics
-- Inventory status reports
-- Borrowing patterns
-- Overdue items tracking
-- Usage analytics
+#### ↔️ Transaction System
+- ✅ Check-out/check-in workflow
+- ✅ Due date tracking
+- ✅ Overdue detection and marking
+- ✅ Condition assessment on return
+- ✅ Transaction history archiving
+- ✅ Real-time status updates
+- 🚧 Email notifications (planned)
 
-### 🔐 Security
-- Firebase Authentication (email/password)
-- Role-based access control (admin/borrower)
-- Firestore Security Rules
-- Firebase App Check protection
-- Audit logging
+#### 📊 Dashboard & Analytics
+- ✅ Dashboard with key statistics
+- ✅ Recent activity feed
+- ✅ Overdue items alerts
+- ✅ Inventory counts by status
+- ✅ Real-time updates
+- 🚧 Visual charts and graphs (planned)
+- 🚧 Advanced reports (planned)
+
+#### 🔐 Security & Authentication
+- ✅ Firebase Authentication (email/password)
+- ✅ Role-based access control (admin)
+- ✅ Firestore Security Rules deployed
+- ✅ Storage Security Rules deployed
+- ✅ Login modal with demo mode option
+- 🚧 Firebase App Check (optional enhancement)
+
+#### 🎨 User Experience
+- ✅ Responsive design (mobile, tablet, desktop)
+- ✅ Dark/light theme toggle
+- ✅ Toast notifications
+- ✅ Loading states
+- ✅ Real-time sync across devices
+- ✅ Offline persistence (Firestore)
+
+### 🚧 Planned Enhancements
+- Photo upload UI with drag-and-drop
+- Barcode/QR code generation and scanning
+- Advanced reporting and analytics
+- Email notifications for due dates
+- Chart.js visualizations
+- Bulk import/export operations
+- PWA (Progressive Web App) support
+- Mobile app version
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Access the Live Application
+
+**Production Site**: [https://thewaulicus.github.io/wolves-den-inventory/](https://thewaulicus.github.io/wolves-den-inventory/)
+
+1. Visit the URL above
+2. Sign in with your admin credentials (or continue in demo mode)
+3. Start managing your inventory!
+
+### For Administrators
+
+**Firebase Console**: [https://console.firebase.google.com/project/wolves-den-8bb09](https://console.firebase.google.com/project/wolves-den-8bb09)
+
+- Manage users in Authentication
+- View data in Firestore
+- Monitor usage and analytics
+
+### Local Development
+
+#### Prerequisites
 
 - Node.js and npm installed
 - Firebase CLI: `npm install -g firebase-tools`
