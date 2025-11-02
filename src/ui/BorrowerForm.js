@@ -65,14 +65,14 @@ class BorrowerForm {
                   </div>
 
                   <div class="form-group">
-                    <label for="email">Email *</label>
+                    <label for="email">Email</label>
                     <input 
                       type="email" 
                       id="email" 
                       name="email" 
                       class="form-control"
                       value="${this.borrower?.email || ''}"
-                      required
+                      placeholder="email@example.com"
                     >
                   </div>
 
@@ -84,7 +84,7 @@ class BorrowerForm {
                       name="phone" 
                       class="form-control"
                       value="${this.borrower?.phone || ''}"
-                      placeholder="(555) 123-4567"
+                      placeholder="04XX XXX XXX"
                     >
                   </div>
                 </div>

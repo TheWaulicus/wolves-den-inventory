@@ -82,8 +82,8 @@ class Borrower {
       errors.push('Last name is required');
     }
 
-    if (!this.email || !this.isValidEmail(this.email)) {
-      errors.push('Valid email is required');
+    if (this.email && !this.isValidEmail(this.email)) {
+      errors.push('Email must be valid if provided');
     }
 
     if (!Borrower.VALID_STATUSES.includes(this.status)) {
