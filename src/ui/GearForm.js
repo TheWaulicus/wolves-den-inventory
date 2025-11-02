@@ -62,13 +62,12 @@ class GearForm {
               <div class="grid grid-cols-2">
                 <!-- Brand -->
                 <div class="form-group">
-                  <label class="form-label required">Brand</label>
+                  <label class="form-label">Brand</label>
                   <input type="text" 
                          class="form-input" 
                          id="gear-brand" 
                          value="${item.brand || ''}"
-                         placeholder="e.g., Bauer, CCM, Warrior" 
-                         required>
+                         placeholder="e.g., Bauer, CCM, Warrior">
                 </div>
 
                 <!-- Model -->
@@ -136,40 +135,59 @@ class GearForm {
                           placeholder="Additional notes about this item">${item.description || ''}</textarea>
               </div>
 
-              <!-- Purchase Info (Optional) -->
+              <!-- Donation Info (Optional) -->
               <div class="form-group">
                 <button type="button" 
                         class="btn btn-ghost btn-sm" 
-                        onclick="gearForm.togglePurchaseInfo()">
-                  <span id="purchase-toggle-icon">▶️</span> Purchase Information (Optional)
+                        onclick="gearForm.toggleDonationInfo()">
+                  <span id="donation-toggle-icon">▶️</span> Donation Information (Optional)
                 </button>
               </div>
 
-              <div id="purchase-info" style="display: none;">
+              <div id="donation-info" style="display: none;">
                 <div class="grid grid-cols-2">
-                  <!-- Purchase Date -->
+                  <!-- Donation Date -->
                   <div class="form-group">
-                    <label class="form-label">Purchase Date</label>
+                    <label class="form-label">Donation Date</label>
                     <input type="date" 
                            class="form-input" 
-                           id="gear-purchase-date"
-                           value="${item.purchaseDate ? DateHelpers.formatDate(item.purchaseDate) : ''}">
+                           id="gear-donation-date"
+                           value="${item.donationDate ? DateHelpers.formatDate(item.donationDate) : ''}">
                   </div>
 
-                  <!-- Purchase Cost -->
+                  <!-- Donor Name -->
                   <div class="form-group">
-                    <label class="form-label">Purchase Cost</label>
-                    <div style="position: relative;">
-                      <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted);">$</span>
-                      <input type="number" 
-                             class="form-input" 
-                             id="gear-purchase-cost"
-                             value="${item.purchaseCost || ''}"
-                             placeholder="0.00"
-                             step="0.01"
-                             min="0"
-                             style="padding-left: 1.75rem;">
+                    <label class="form-label">Donor Name</label>
+                    <select class="form-select" 
+                            id="gear-donor-id"
+                            onchange="gearForm.handleDonorChange()">
+                      <option value="">Select donor...</option>
+                      <option value="__new__">+ Add New Donor</option>
+                      <!-- Dynamic borrower list will be inserted here -->
+                    </select>
+                  </div>
+                </div>
+
+                <!-- New Donor Form (hidden by default) -->
+                <div id="new-donor-form" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--color-background); border-radius: 4px;">
+                  <h4>Add New Donor</h4>
+                  <div class="grid grid-cols-2">
+                    <div class="form-group">
+                      <label class="form-label">First Name</label>
+                      <input type="text" class="form-input" id="donor-first-name" placeholder="First name">
                     </div>
+                    <div class="form-group">
+                      <label class="form-label">Last Name</label>
+                      <input type="text" class="form-input" id="donor-last-name" placeholder="Last name">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="donor-email" placeholder="email@example.com">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" class="form-input" id="donor-phone" placeholder="(555) 123-4567">
                   </div>
                 </div>
               </div>
@@ -273,16 +291,52 @@ class GearForm {
   /**
    * Toggle purchase information section
    */
-  togglePurchaseInfo() {
-    const purchaseInfo = document.getElementById('purchase-info');
-    const icon = document.getElementById('purchase-toggle-icon');
+  toggleDonationInfo() {
+    const donationInfo = document.getElementById('donation-info');
+    const icon = document.getElementById('donation-toggle-icon');
     
-    if (purchaseInfo.style.display === 'none') {
-      purchaseInfo.style.display = 'block';
-      icon.textContent = '🔽';
+    if (donationInfo.style.display === 'none') {
+      donationInfo.style.display = 'block';
+      icon.textContent = '▼';
+      this.loadDonors();
     } else {
-      purchaseInfo.style.display = 'none';
+      donationInfo.style.display = 'none';
       icon.textContent = '▶️';
+    }
+  }
+
+  async loadDonors() {
+    try {
+      const borrowers = await borrowerService.getAll();
+      const select = document.getElementById('gear-donor-id');
+      
+      // Keep the first two options (empty and new)
+      const options = '<option value="">Select donor...</option><option value="__new__">+ Add New Donor</option>';
+      
+      // Add borrowers
+      const borrowerOptions = borrowers.map(b => 
+        `<option value="${b.id}">${b.getFullName()}</option>`
+      ).join('');
+      
+      select.innerHTML = options + borrowerOptions;
+      
+      // Set selected if editing
+      if (this.item && this.item.donorId) {
+        select.value = this.item.donorId;
+      }
+    } catch (error) {
+      console.error('Error loading donors:', error);
+    }
+  }
+
+  handleDonorChange() {
+    const select = document.getElementById('gear-donor-id');
+    const newDonorForm = document.getElementById('new-donor-form');
+    
+    if (select.value === '__new__') {
+      newDonorForm.style.display = 'block';
+    } else {
+      newDonorForm.style.display = 'none';
     }
   }
 
@@ -301,18 +355,13 @@ class GearForm {
         barcode: document.getElementById('gear-barcode').value.trim(),
         description: document.getElementById('gear-description').value.trim(),
         notes: document.getElementById('gear-notes').value.trim(),
-        purchaseDate: document.getElementById('gear-purchase-date').value,
-        purchaseCost: document.getElementById('gear-purchase-cost').value
+        donationDate: document.getElementById('gear-donation-date')?.value,
+        donorId: document.getElementById('gear-donor-id')?.value
       };
 
       // Validation
       if (!formData.gearType) {
         showError('Please select a gear type');
-        return;
-      }
-
-      if (!formData.brand) {
-        showError('Brand is required');
         return;
       }
 
@@ -328,18 +377,43 @@ class GearForm {
         formData.barcode = gearService.generateBarcode();
       }
 
-      // Convert purchase date
-      if (formData.purchaseDate) {
-        formData.purchaseDate = new Date(formData.purchaseDate);
-      } else {
-        formData.purchaseDate = null;
+      // Handle new donor creation
+      if (formData.donorId === '__new__') {
+        const firstName = document.getElementById('donor-first-name').value.trim();
+        const lastName = document.getElementById('donor-last-name').value.trim();
+        const email = document.getElementById('donor-email').value.trim();
+        const phone = document.getElementById('donor-phone').value.trim();
+        
+        if (!firstName || !lastName || !email) {
+          showError('Please fill in donor first name, last name, and email');
+          return;
+        }
+        
+        // Create new borrower/donor
+        const donor = new Borrower({
+          firstName,
+          lastName,
+          email,
+          phone,
+          status: 'active',
+          maxItems: 0, // Donors don't borrow
+          notes: 'Created as donor'
+        });
+        
+        try {
+          formData.donorId = await borrowerService.create(donor);
+          showSuccess('Donor added successfully');
+        } catch (error) {
+          showError('Failed to create donor: ' + error.message);
+          return;
+        }
       }
 
-      // Convert purchase cost
-      if (formData.purchaseCost) {
-        formData.purchaseCost = parseFloat(formData.purchaseCost);
+      // Convert donation date
+      if (formData.donationDate) {
+        formData.donationDate = new Date(formData.donationDate);
       } else {
-        formData.purchaseCost = null;
+        formData.donationDate = null;
       }
 
       if (this.gearId) {
