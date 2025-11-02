@@ -323,9 +323,19 @@ class GearManagement {
         <td><span class="badge badge-${this.getStatusClass(item.status)}">${item.status}</span></td>
         <td>${item.barcode || '-'}</td>
         <td onclick="event.stopPropagation()">
-          <button class="btn btn-sm btn-ghost" onclick="gearManagement.showViewModal('${item.id}')">
-            View
-          </button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-sm btn-ghost" onclick="gearManagement.showViewModal('${item.id}')">
+              👁️ View
+            </button>
+            <button class="btn btn-sm btn-ghost" onclick="gearManagement.showEditModal('${item.id}')">
+              ✏️ Edit
+            </button>
+            ${item.status === 'available' ? `
+              <button class="btn btn-sm btn-success" onclick="gearManagement.quickCheckout('${item.id}')">
+                📤 Check Out
+              </button>
+            ` : ''}
+          </div>
         </td>
       </tr>
     `;
