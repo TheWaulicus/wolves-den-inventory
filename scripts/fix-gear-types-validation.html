@@ -121,6 +121,23 @@
     <h1>🔧 Fix Gear Types - Categories & Sizes</h1>
     <p class="subtitle">Validate and fix gear types with missing or invalid categories and size configurations</p>
 
+    <!-- Authentication Section -->
+    <div class="section" id="auth-section">
+      <h3>🔐 Authentication Required</h3>
+      <p>You must be signed in as an admin to fix gear types.</p>
+      <div id="auth-status" style="margin-bottom: 15px;">
+        <span style="color: #ef4444;">❌ Not authenticated</span>
+      </div>
+      <div id="auth-form">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <input type="email" id="admin-email" placeholder="Admin email" class="form-input" style="flex: 1; padding: 10px; border: 1px solid #e5e7eb; border-radius: 4px;">
+          <input type="password" id="admin-password" placeholder="Password" class="form-input" style="flex: 1; padding: 10px; border: 1px solid #e5e7eb; border-radius: 4px;">
+        </div>
+        <button onclick="signIn()" id="signin-btn">🔑 Sign In</button>
+        <button onclick="signOut()" id="signout-btn" style="display: none; background: #6b7280;">🚪 Sign Out</button>
+      </div>
+    </div>
+
     <div class="section">
       <h3>📊 Current Status</h3>
       <div class="stats" id="stats">
@@ -161,14 +178,82 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="../src/firebase-config.js"></script>
   <script src="../src/models/GearType.js"></script>
   <script src="../src/services/GearTypeService.js"></script>
 
   <script>
+    const auth = firebase.auth();
     const gearTypeService = new GearTypeService();
     let allGearTypes = [];
     let invalidGearTypes = [];
+    let currentUser = null;
+
+    // Monitor auth state
+    auth.onAuthStateChanged((user) => {
+      currentUser = user;
+      updateAuthUI();
+      if (user) {
+        log(`✅ Signed in as: ${user.email}`, 'success');
+      }
+    });
+
+    function updateAuthUI() {
+      const authStatus = document.getElementById('auth-status');
+      const signinBtn = document.getElementById('signin-btn');
+      const signoutBtn = document.getElementById('signout-btn');
+      const analyzeBtn = document.getElementById('analyze-btn');
+      const fixBtn = document.getElementById('fix-btn');
+
+      if (currentUser) {
+        authStatus.innerHTML = `<span style="color: #10b981;">✅ Signed in as: ${currentUser.email}</span>`;
+        signinBtn.style.display = 'none';
+        signoutBtn.style.display = 'inline-block';
+        analyzeBtn.disabled = false;
+        document.getElementById('admin-email').disabled = true;
+        document.getElementById('admin-password').disabled = true;
+      } else {
+        authStatus.innerHTML = `<span style="color: #ef4444;">❌ Not authenticated</span>`;
+        signinBtn.style.display = 'inline-block';
+        signoutBtn.style.display = 'none';
+        analyzeBtn.disabled = true;
+        fixBtn.disabled = true;
+        document.getElementById('admin-email').disabled = false;
+        document.getElementById('admin-password').disabled = false;
+      }
+    }
+
+    async function signIn() {
+      try {
+        const email = document.getElementById('admin-email').value;
+        const password = document.getElementById('admin-password').value;
+
+        if (!email || !password) {
+          log('❌ Please enter email and password', 'error');
+          return;
+        }
+
+        log('🔐 Signing in...', 'info');
+        await auth.signInWithEmailAndPassword(email, password);
+        log('✅ Sign in successful!', 'success');
+        
+        // Clear password field
+        document.getElementById('admin-password').value = '';
+        
+      } catch (error) {
+        log(`❌ Sign in failed: ${error.message}`, 'error');
+      }
+    }
+
+    async function signOut() {
+      try {
+        await auth.signOut();
+        log('✅ Signed out', 'info');
+      } catch (error) {
+        log(`❌ Sign out failed: ${error.message}`, 'error');
+      }
+    }
 
     function log(message, type = 'info') {
       const logEl = document.getElementById('log');
@@ -421,11 +506,16 @@
       }
     }
 
-    // Auto-run analysis on load
+    // Auto-run analysis on load (if authenticated)
     window.addEventListener('load', () => {
       setTimeout(() => {
-        log('🚀 Ready to analyze gear types', 'info');
-        analyzeGearTypes();
+        log('🚀 Script loaded and ready', 'info');
+        if (currentUser) {
+          log('🔍 Running analysis...', 'info');
+          analyzeGearTypes();
+        } else {
+          log('⚠️ Please sign in to analyze gear types', 'warning');
+        }
       }, 1000);
     });
   </script>
