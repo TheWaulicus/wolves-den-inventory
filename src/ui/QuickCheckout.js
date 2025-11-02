@@ -76,14 +76,13 @@ class QuickCheckout {
 
               <!-- Due Date -->
               <div class="form-group">
-                <label class="form-label required">Due Date</label>
+                <label class="form-label">Due Date (Optional)</label>
                 <input type="date" 
                        class="form-input" 
                        id="checkout-due-date" 
                        value="${DateHelpers.formatDate(defaultDueDate)}"
-                       min="${DateHelpers.formatDate(new Date())}"
-                       required>
-                <span class="form-help">Default: 14 days from today</span>
+                       min="${DateHelpers.formatDate(new Date())}">
+                <span class="form-help">Default: 14 days from today if not specified</span>
               </div>
 
               <!-- Notes -->
@@ -121,15 +120,18 @@ class QuickCheckout {
         return;
       }
 
-      if (!dueDateStr) {
-        showError('Please select a due date');
-        return;
-      }
-
-      const dueDate = new Date(dueDateStr);
-      if (dueDate < new Date()) {
-        showError('Due date cannot be in the past');
-        return;
+      // Use provided due date or default to 14 days from now
+      let dueDate;
+      if (dueDateStr) {
+        dueDate = new Date(dueDateStr);
+        if (dueDate < new Date()) {
+          showError('Due date cannot be in the past');
+          return;
+        }
+      } else {
+        // Default to 14 days from now
+        dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 14);
       }
 
       // Get borrower
