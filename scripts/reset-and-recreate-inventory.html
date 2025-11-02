@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset & Recreate Inventory</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1400px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .warning-box {
+      background: #fef2f2;
+      border: 2px solid #ef4444;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .warning-box h3 {
+      color: #dc2626;
+      margin-top: 0;
+    }
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 6px;
+      border-left: 4px solid #3b82f6;
+    }
+    .section h3 {
+      margin-top: 0;
+      color: #1f2937;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    button.danger {
+      background: #ef4444;
+    }
+    button.danger:hover {
+      background: #dc2626;
+    }
+    .log {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 20px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      max-height: 500px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .log-entry {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .log-success { color: #10b981; }
+    .log-error { color: #ef4444; }
+    .log-warning { color: #f59e0b; }
+    .log-info { color: #3b82f6; }
+    .form-input {
+      padding: 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: bold;
+      color: #1f2937;
+    }
+    .stat-label {
+      color: #6b7280;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚠️ Reset & Recreate Inventory</h1>
+    <p class="subtitle">Complete database reset and recreation from fresh data</p>
+
+    <div class="warning-box">
+      <h3>⚠️ DANGER ZONE - READ CAREFULLY</h3>
+      <p><strong>This operation will:</strong></p>
+      <ul>
+        <li>❌ DELETE all gear items</li>
+        <li>❌ DELETE all gear types</li>
+        <li>❌ DELETE all transactions</li>
+        <li>❌ DELETE all borrowers</li>
+        <li>✅ CREATE fresh gear types with correct sizes</li>
+        <li>✅ CREATE individual items based on inventory counts</li>
+      </ul>
+      <p style="color: #dc2626; font-weight: bold;">⚠️ THIS CANNOT BE UNDONE! Make sure you have backups!</p>
+    </div>
+
+    <!-- Authentication Section -->
+    <div class="section" id="auth-section">
+      <h3>🔐 Authentication Required</h3>
+      <p>You must be signed in as an admin to reset the database.</p>
+      <div id="auth-status" style="margin-bottom: 15px;">
+        <span style="color: #ef4444;">❌ Not authenticated</span>
+      </div>
+      <div id="auth-form">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <input type="email" id="admin-email" placeholder="Admin email" class="form-input" style="flex: 1;">
+          <input type="password" id="admin-password" placeholder="Password" class="form-input" style="flex: 1;">
+        </div>
+        <button onclick="signIn()" id="signin-btn">🔑 Sign In</button>
+        <button onclick="signOut()" id="signout-btn" style="display: none; background: #6b7280;">🚪 Sign Out</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>📊 Progress</h3>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="deleted-count">0</div>
+          <div class="stat-label">Items Deleted</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="types-created">0</div>
+          <div class="stat-label">Types Created</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="items-created">0</div>
+          <div class="stat-label">Items Created</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>⚙️ Actions</h3>
+      <button onclick="step1_deleteAll()" id="delete-btn" disabled class="danger">🗑️ Step 1: Delete All Data</button>
+      <button onclick="step2_createGearTypes()" id="create-types-btn" disabled>📦 Step 2: Create Gear Types</button>
+      <button onclick="step3_createGearItems()" id="create-items-btn" disabled>🎯 Step 3: Create Gear Items</button>
+      <button onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <div class="section">
+      <h3>📝 Activity Log</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="../src/firebase-config.js"></script>
+  <script src="../src/models/GearItem.js"></script>
+  <script src="../src/models/GearType.js"></script>
+  <script src="../src/services/GearService.js"></script>
+  <script src="../src/services/GearTypeService.js"></script>
+
+  <script>
+    const authService = firebase.auth();
+    const db = firebase.firestore();
+    const gearService = new GearService();
+    const gearTypeService = new GearTypeService();
+    let currentUser = null;
+
+    // Define complete inventory based on screenshot
+    const GEAR_TYPES_DATA = [
+      // Junior Gear
+      {
+        id: 'chest-armour-jr',
+        name: 'Chest Armour',
+        category: 'protective',
+        icon: '🦺',
+        sizeOptions: ['Small', 'Medium', 'Large', 'X-Large'],
+        items: [
+          { size: 'Small', count: 5 },
+          { size: 'Medium', count: 1 },
+          { size: 'Large', count: 3 }
+        ]
+      },
+      {
+        id: 'hockey-pants-jr',
+        name: 'Hockey Pants',
+        category: 'protective',
+        icon: '👖',
+        sizeOptions: ['Small', 'Medium', 'Large', 'X-Large'],
+        items: [
+          { size: 'Small', count: 3 },
+          { size: 'Medium', count: 1 }
+        ]
+      },
+      {
+        id: 'elbows-jr',
+        name: 'Elbows',
+        category: 'protective',
+        icon: '🛡️',
+        sizeOptions: ['Small', 'Medium', 'Large'],
+        items: [
+          { size: 'Small', count: 1 },
+          { size: 'Medium', count: 1 },
+          { size: 'Large', count: 1 }
+        ]
+      },
+
+      // Senior Gear
+      {
+        id: 'chest-armour-senior',
+        name: 'Chest Armour',
+        category: 'protective',
+        icon: '🦺',
+        sizeOptions: ['Small', 'Medium', 'Large', 'X-Large', 'No Size'],
+        items: [
+          { size: 'Small', count: 2 },
+          { size: 'Large', count: 1 },
+          { size: 'X-Large', count: 2 },
+          { size: 'No Size', count: 3 }
+        ]
+      },
+      {
+        id: 'hockey-pants-senior',
+        name: 'Hockey Pants',
+        category: 'protective',
+        icon: '👖',
+        sizeOptions: ['Small', 'Medium', 'Large', 'X-Large', 'No Size'],
+        items: [
+          { size: 'Large', count: 2 },
+          { size: 'X-Large', count: 1 },
+          { size: 'No Size', count: 2 }
+        ]
+      },
+      {
+        id: 'elbows-senior',
+        name: 'Elbows',
+        category: 'protective',
+        icon: '🛡️',
+        sizeOptions: ['Small', 'Medium', 'Large'],
+        items: [
+          { size: 'Small', count: 1 },
+          { size: 'Large', count: 3 }
+        ]
+      },
+
+      // Goalie Gear
+      {
+        id: 'goalie-chest-armour-senior',
+        name: 'Chest Armour - Senior',
+        category: 'protective',
+        icon: '🥅',
+        sizeOptions: ['Small', 'Medium', 'Large', 'X-Large'],
+        items: [
+          { size: 'Small', count: 2 },
+          { size: 'X-Large', count: 2 }
+        ]
+      },
+      {
+        id: 'goalie-chest-armour-int',
+        name: 'Chest Armour - Int',
+        category: 'protective',
+        icon: '🥅',
+        sizeOptions: ['Small', 'Medium', 'Large', 'No Size'],
+        items: [
+          { size: 'Large', count: 2 },
+          { size: 'No Size', count: 3 }
+        ]
+      },
+      {
+        id: 'goalie-chest-armour-jr',
+        name: 'Chest Armour - Jr',
+        category: 'protective',
+        icon: '🥅',
+        sizeOptions: ['Junior'],
+        items: [
+          { size: 'Junior', count: 1 }
+        ]
+      },
+      {
+        id: 'goalie-pants',
+        name: 'Goalie Pants',
+        category: 'protective',
+        icon: '👖',
+        sizeOptions: ['Small', 'Medium', 'Large', 'X-Large'],
+        items: [
+          { size: 'Medium', count: 1 }
+        ]
+      },
+      {
+        id: 'goalie-helmets',
+        name: 'Goalie Helmets',
+        category: 'protective',
+        icon: '🪖',
+        sizeOptions: ['One Size'],
+        items: [
+          { size: 'One Size', count: 10 }
+        ]
+      },
+      {
+        id: 'goalie-pads-jr',
+        name: 'Goalie Pads - Jr',
+        category: 'protective',
+        icon: '🥅',
+        sizeOptions: ['26" + 1"'],
+        items: [
+          { size: '26" + 1"', count: 1 }
+        ]
+      },
+
+      // Shin Pads
+      {
+        id: 'shin-pads',
+        name: 'Shin Pads',
+        category: 'protective',
+        icon: '🦿',
+        sizeOptions: ['10"', '11"', '12"', '13"', '14"', '15"', '16"', '17"'],
+        items: [
+          { size: '10"', count: 1 },
+          { size: '11"', count: 3 },
+          { size: '12"', count: 2 },
+          { size: '13"', count: 3 },
+          { size: '14"', count: 4 },
+          { size: '15"', count: 2 },
+          { size: '16"', count: 3 }
+        ]
+      },
+
+      // Hockey Skates
+      {
+        id: 'hockey-skates',
+        name: 'Hockey Skates',
+        category: 'footwear',
+        icon: '⛸️',
+        sizeOptions: ['1', '2', '2.5', '3', '4', '5 (Goalie)', '6', '7', '7.5', '9.5', '10 (Goalie)', 'Not sure (Goalie)'],
+        items: [
+          { size: '1', count: 1 },
+          { size: '2', count: 1 },
+          { size: '2.5', count: 1 },
+          { size: '3', count: 3 },
+          { size: '4', count: 1 },
+          { size: '6', count: 2 },
+          { size: '7', count: 1 },
+          { size: '7.5', count: 2 },
+          { size: '9.5', count: 1 },
+          { size: 'Not sure (Goalie)', count: 1 },
+          { size: '5 (Goalie)', count: 1 },
+          { size: '10 (Goalie)', count: 1 }
+        ]
+      },
+
+      // Gloves
+      {
+        id: 'gloves',
+        name: 'Gloves',
+        category: 'protective',
+        icon: '🧤',
+        sizeOptions: ['11"', '12"', '13"', '14"', '14.5"', '15"'],
+        items: [
+          { size: '11"', count: 1 },
+          { size: '12"', count: 1 },
+          { size: '13"', count: 5 },
+          { size: '14"', count: 1 },
+          { size: '14.5"', count: 1 },
+          { size: '15"', count: 1 }
+        ]
+      },
+
+      // Helmets
+      {
+        id: 'helmets-youth',
+        name: 'Helmets - Youth',
+        category: 'protective',
+        icon: '🪖',
+        sizeOptions: ['Small', 'Medium', 'Large'],
+        items: [
+          { size: 'Small', count: 1 },
+          { size: 'Medium', count: 2 }
+        ]
+      },
+      {
+        id: 'helmets-adult',
+        name: 'Helmets - Adult',
+        category: 'protective',
+        icon: '🪖',
+        sizeOptions: ['Small', 'Medium', 'Large'],
+        items: [
+          { size: 'Small', count: 2 },
+          { size: 'Medium', count: 1 },
+          { size: 'Large', count: 2 }
+        ]
+      },
+      {
+        id: 'metal-cages',
+        name: 'Metal Cages',
+        category: 'protective',
+        icon: '🔲',
+        sizeOptions: ['One Size'],
+        items: [
+          { size: 'One Size', count: 7 }
+        ]
+      },
+      {
+        id: 'clear-visor',
+        name: 'Clear Visor',
+        category: 'protective',
+        icon: '🔲',
+        sizeOptions: ['One Size'],
+        items: [
+          { size: 'One Size', count: 1 }
+        ]
+      }
+    ];
+
+    // Monitor auth state
+    authService.onAuthStateChanged((user) => {
+      currentUser = user;
+      updateAuthUI();
+      if (user) {
+        log(`✅ Signed in as: ${user.email}`, 'success');
+      }
+    });
+
+    function updateAuthUI() {
+      const authStatus = document.getElementById('auth-status');
+      const signinBtn = document.getElementById('signin-btn');
+      const signoutBtn = document.getElementById('signout-btn');
+      const deleteBtn = document.getElementById('delete-btn');
+
+      if (currentUser) {
+        authStatus.innerHTML = `<span style="color: #10b981;">✅ Signed in as: ${currentUser.email}</span>`;
+        signinBtn.style.display = 'none';
+        signoutBtn.style.display = 'inline-block';
+        deleteBtn.disabled = false;
+        document.getElementById('admin-email').disabled = true;
+        document.getElementById('admin-password').disabled = true;
+      } else {
+        authStatus.innerHTML = `<span style="color: #ef4444;">❌ Not authenticated</span>`;
+        signinBtn.style.display = 'inline-block';
+        signoutBtn.style.display = 'none';
+        deleteBtn.disabled = true;
+        document.getElementById('admin-email').disabled = false;
+        document.getElementById('admin-password').disabled = false;
+      }
+    }
+
+    async function signIn() {
+      try {
+        const email = document.getElementById('admin-email').value;
+        const password = document.getElementById('admin-password').value;
+
+        if (!email || !password) {
+          log('❌ Please enter email and password', 'error');
+          return;
+        }
+
+        log('🔐 Signing in...', 'info');
+        await authService.signInWithEmailAndPassword(email, password);
+        log('✅ Sign in successful!', 'success');
+        
+        document.getElementById('admin-password').value = '';
+        
+      } catch (error) {
+        log(`❌ Sign in failed: ${error.message}`, 'error');
+      }
+    }
+
+    async function signOut() {
+      try {
+        await authService.signOut();
+        log('✅ Signed out', 'info');
+      } catch (error) {
+        log(`❌ Sign out failed: ${error.message}`, 'error');
+      }
+    }
+
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = `[${timestamp}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(`[${type.toUpperCase()}]`, message);
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+    }
+
+    async function deleteCollection(collectionName) {
+      const snapshot = await db.collection(collectionName).get();
+      const batch = db.batch();
+      let count = 0;
+
+      snapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+        count++;
+      });
+
+      if (count > 0) {
+        await batch.commit();
+      }
+      return count;
+    }
+
+    async function step1_deleteAll() {
+      if (!confirm('⚠️ DELETE ALL DATA? This will remove ALL gear items, types, transactions, and borrowers. Type YES in the next prompt to confirm.')) {
+        return;
+      }
+
+      const confirmation = prompt('Type YES to confirm deletion:');
+      if (confirmation !== 'YES') {
+        log('❌ Deletion cancelled', 'warning');
+        return;
+      }
+
+      try {
+        log('🗑️ Starting deletion of all collections...', 'warning');
+        document.getElementById('delete-btn').disabled = true;
+
+        let totalDeleted = 0;
+
+        // Delete gear items
+        log('Deleting gear items...', 'info');
+        const itemsDeleted = await deleteCollection('gearItems');
+        totalDeleted += itemsDeleted;
+        log(`✅ Deleted ${itemsDeleted} gear items`, 'success');
+
+        // Delete gear types
+        log('Deleting gear types...', 'info');
+        const typesDeleted = await deleteCollection('gearTypes');
+        totalDeleted += typesDeleted;
+        log(`✅ Deleted ${typesDeleted} gear types`, 'success');
+
+        // Delete transactions
+        log('Deleting transactions...', 'info');
+        const transDeleted = await deleteCollection('transactions');
+        totalDeleted += transDeleted;
+        log(`✅ Deleted ${transDeleted} transactions`, 'success');
+
+        // Delete transaction history
+        log('Deleting transaction history...', 'info');
+        const histDeleted = await deleteCollection('transactionHistory');
+        totalDeleted += histDeleted;
+        log(`✅ Deleted ${histDeleted} transaction history records`, 'success');
+
+        // Delete borrowers
+        log('Deleting borrowers...', 'info');
+        const borrowersDeleted = await deleteCollection('borrowers');
+        totalDeleted += borrowersDeleted;
+        log(`✅ Deleted ${borrowersDeleted} borrowers`, 'success');
+
+        document.getElementById('deleted-count').textContent = totalDeleted;
+        log(`✅ Deletion complete! Removed ${totalDeleted} total documents`, 'success');
+        log('✅ Ready for Step 2: Create Gear Types', 'info');
+        
+        document.getElementById('create-types-btn').disabled = false;
+
+      } catch (error) {
+        log(`❌ Error during deletion: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        document.getElementById('delete-btn').disabled = false;
+      }
+    }
+
+    async function step2_createGearTypes() {
+      try {
+        log('📦 Creating gear types...', 'info');
+        document.getElementById('create-types-btn').disabled = true;
+
+        let createdCount = 0;
+
+        for (const typeData of GEAR_TYPES_DATA) {
+          try {
+            const gearType = new GearType({
+              name: typeData.name,
+              category: typeData.category,
+              icon: typeData.icon,
+              sizeOptions: typeData.sizeOptions,
+              requiresSize: true,
+              sizeType: 'custom',
+              isActive: true
+            });
+
+            await gearTypeService.createWithId(typeData.id, gearType);
+            createdCount++;
+            log(`✅ Created: ${typeData.name} (${typeData.sizeOptions.length} sizes)`, 'success');
+
+          } catch (error) {
+            log(`❌ Error creating ${typeData.name}: ${error.message}`, 'error');
+          }
+        }
+
+        document.getElementById('types-created').textContent = createdCount;
+        log(`✅ Created ${createdCount} gear types`, 'success');
+        log('✅ Ready for Step 3: Create Gear Items', 'info');
+        
+        document.getElementById('create-items-btn').disabled = false;
+
+      } catch (error) {
+        log(`❌ Error creating gear types: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        document.getElementById('create-types-btn').disabled = false;
+      }
+    }
+
+    async function step3_createGearItems() {
+      try {
+        log('🎯 Creating gear items...', 'info');
+        document.getElementById('create-items-btn').disabled = true;
+
+        let totalCreated = 0;
+
+        for (const typeData of GEAR_TYPES_DATA) {
+          if (!typeData.items || typeData.items.length === 0) continue;
+
+          for (const itemGroup of typeData.items) {
+            // Create individual items for each count
+            for (let i = 0; i < itemGroup.count; i++) {
+              try {
+                const gearItem = new GearItem({
+                  gearType: typeData.id,
+                  brand: 'Generic',
+                  model: typeData.name,
+                  size: itemGroup.size,
+                  status: 'available',
+                  description: `${typeData.name} - ${itemGroup.size}`,
+                  notes: ''
+                });
+
+                await gearService.create(gearItem);
+                totalCreated++;
+
+              } catch (error) {
+                log(`❌ Error creating item: ${error.message}`, 'error');
+              }
+            }
+
+            log(`✅ Created ${itemGroup.count}x ${typeData.name} (${itemGroup.size})`, 'success');
+          }
+        }
+
+        document.getElementById('items-created').textContent = totalCreated;
+        log(`✅ Created ${totalCreated} gear items total!`, 'success');
+        log('🎉 Recreation complete! Your inventory is ready.', 'success');
+
+      } catch (error) {
+        log(`❌ Error creating gear items: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        document.getElementById('create-items-btn').disabled = false;
+      }
+    }
+
+    // Initial setup
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        log('🚀 Reset & Recreate script loaded', 'info');
+        log('⚠️ WARNING: This will delete ALL data and recreate from scratch', 'warning');
+        if (currentUser) {
+          log('✅ Authenticated - ready to begin', 'success');
+        } else {
+          log('⚠️ Please sign in to continue', 'warning');
+        }
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
