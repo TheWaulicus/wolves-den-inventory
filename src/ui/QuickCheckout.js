@@ -122,8 +122,13 @@ class QuickCheckout {
 
       // Use provided due date or null if not specified
       let dueDate = null;
-      if (dueDateStr) {
+      if (dueDateStr && dueDateStr.trim() !== '') {
         dueDate = new Date(dueDateStr);
+        // Validate the date is valid
+        if (isNaN(dueDate.getTime())) {
+          showError('Invalid due date');
+          return;
+        }
         if (dueDate < new Date()) {
           showError('Due date cannot be in the past');
           return;

@@ -25,6 +25,13 @@ venv/
 .env
 .env.local
 
+# Firebase
+.firebase/
+.firebaserc.local
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
 # Logs
 *.log
 
@@ -40,3 +47,11 @@ Thumbs.db
 # Temporary files
 tmp_*
 *.tmp
+tmp_rovodev_*
+
+# Agent instructions (local overrides)
+AGENTS.md
+AGENTS.local.md
+
+# Node modules (if added later)
+node_modules/
