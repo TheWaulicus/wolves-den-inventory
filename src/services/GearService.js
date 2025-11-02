@@ -236,10 +236,18 @@ class GearService {
    * @returns {Function} Unsubscribe function
    */
   onSnapshot(id, callback) {
-    return this.collection.doc(id).onSnapshot(doc => {
-      const item = GearItem.fromFirestore(doc);
-      callback(item);
-    });
+    if (this.useFirebase) {
+      return this.collection.doc(id).onSnapshot(doc => {
+        const item = GearItem.fromFirestore(doc);
+        callback(item);
+      });
+    } else {
+      // Memory mode - simulate with initial callback
+      this.getById(id).then(item => {
+        if (item) callback(item);
+      });
+      return () => {}; // No-op unsubscribe
+    }
   }
 
   /**

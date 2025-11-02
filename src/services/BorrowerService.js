@@ -235,10 +235,18 @@ class BorrowerService {
   }
 
   onSnapshot(id, callback) {
-    return this.collection.doc(id).onSnapshot(doc => {
-      const borrower = Borrower.fromFirestore(doc);
-      callback(borrower);
-    });
+    if (this.useFirebase) {
+      return this.collection.doc(id).onSnapshot(doc => {
+        const borrower = Borrower.fromFirestore(doc);
+        callback(borrower);
+      });
+    } else {
+      // Memory mode - simulate with initial callback
+      this.getById(id).then(borrower => {
+        if (borrower) callback(borrower);
+      });
+      return () => {}; // No-op unsubscribe
+    }
   }
 
   onSnapshotAll(filters = {}, callback) {
