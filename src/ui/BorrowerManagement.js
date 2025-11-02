@@ -139,6 +139,11 @@ class BorrowerManagement {
   renderTable() {
     const container = document.getElementById('borrowers-table-container');
     
+    // Guard: If container doesn't exist yet, skip rendering
+    if (!container) {
+      return;
+    }
+    
     if (this.filteredBorrowers.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
@@ -228,6 +233,11 @@ class BorrowerManagement {
 
   updateStats() {
     const container = document.getElementById('borrower-stats');
+    
+    // Guard: If container doesn't exist yet, skip updating
+    if (!container) {
+      return;
+    }
     
     const stats = {
       total: this.borrowers.length,
