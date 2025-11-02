@@ -94,17 +94,111 @@ class WolvesDenApp {
     const userRoleEl = document.querySelector('.user-role');
 
     if (userNameEl) {
-      userNameEl.textContent = 'Demo Mode';
+      userNameEl.textContent = 'Not Signed In';
     }
 
     if (userRoleEl) {
-      userRoleEl.textContent = 'Not Authenticated';
+      userRoleEl.textContent = 'Click to sign in';
     }
 
-    // Show info notification
+    // Add click handler to sign in
+    const userDiv = document.getElementById('sidebar-user');
+    if (userDiv) {
+      userDiv.style.cursor = 'pointer';
+      userDiv.onclick = () => this.showLoginModal();
+    }
+
+    // Show login modal after a moment
     setTimeout(() => {
-      showInfo('Running in demo mode. Configure Firebase to enable full functionality.', 'Demo Mode', 0);
-    }, 1000);
+      this.showLoginModal();
+    }, 500);
+  }
+
+  showLoginModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay active';
+    modal.id = 'login-modal';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🔐 Sign In to Wolves Den</h2>
+        </div>
+        <div class="modal-body">
+          <form id="login-form" onsubmit="app.handleLogin(event)">
+            <div class="form-group">
+              <label for="login-email">Email</label>
+              <input 
+                type="email" 
+                id="login-email" 
+                class="form-control" 
+                placeholder="admin@wolves.com"
+                required
+                autofocus
+              >
+            </div>
+            <div class="form-group">
+              <label for="login-password">Password</label>
+              <input 
+                type="password" 
+                id="login-password" 
+                class="form-control" 
+                placeholder="Password"
+                required
+              >
+            </div>
+            <div id="login-error" class="alert alert-error" style="display: none; margin-top: 1rem;">
+              <div class="alert-content" id="login-error-message"></div>
+            </div>
+            <div class="modal-footer" style="margin-top: 1.5rem;">
+              <button type="button" class="btn btn-ghost" onclick="app.closeLoginModal()">
+                Continue in Demo Mode
+              </button>
+              <button type="submit" class="btn btn-primary">
+                Sign In
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+  }
+
+  async handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errorDiv = document.getElementById('login-error');
+    const errorMsg = document.getElementById('login-error-message');
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    
+    try {
+      errorDiv.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+      
+      await signInWithEmail(email, password);
+      
+      showSuccess('Signed in successfully!');
+      this.closeLoginModal();
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      errorMsg.textContent = error.message || 'Failed to sign in. Please check your credentials.';
+      errorDiv.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign In';
+    }
+  }
+
+  closeLoginModal() {
+    const modal = document.getElementById('login-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      setTimeout(() => modal.remove(), 300);
+    }
   }
 
   showFirebaseError() {
