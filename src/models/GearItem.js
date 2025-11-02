@@ -13,8 +13,8 @@ class GearItem {
     this.model = data.model || '';
     this.size = data.size || '';
     this.status = data.status || 'available';
-    this.purchaseDate = data.purchaseDate || null;
-    this.purchaseCost = data.purchaseCost || null;
+    this.donationDate = data.donationDate || null;
+    this.donorId = data.donorId || null;
     this.description = data.description || '';
     this.notes = data.notes || '';
     this.barcode = data.barcode || null;
@@ -43,8 +43,8 @@ class GearItem {
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    if (this.purchaseDate) doc.purchaseDate = this.purchaseDate;
-    if (this.purchaseCost !== null) doc.purchaseCost = this.purchaseCost;
+    if (this.donationDate) doc.donationDate = this.donationDate;
+    if (this.donorId) doc.donorId = this.donorId;
     if (this.barcode) doc.barcode = this.barcode;
     if (this.currentBorrower) doc.currentBorrower = this.currentBorrower;
     if (this.lastCheckoutDate) doc.lastCheckoutDate = this.lastCheckoutDate;
@@ -64,7 +64,8 @@ class GearItem {
     return new GearItem({
       id: doc.id,
       ...data,
-      purchaseDate: data.purchaseDate?.toDate() || null,
+      donationDate: data.donationDate?.toDate() || null,
+      donorId: data.donorId || null,
       lastCheckoutDate: data.lastCheckoutDate?.toDate() || null,
       createdAt: data.createdAt?.toDate() || null,
       updatedAt: data.updatedAt?.toDate() || null
@@ -86,9 +87,7 @@ class GearItem {
       errors.push(`Status must be one of: ${GearItem.VALID_STATUSES.join(', ')}`);
     }
 
-    if (this.purchaseCost !== null && (isNaN(this.purchaseCost) || this.purchaseCost < 0)) {
-      errors.push('Purchase cost must be a positive number');
-    }
+    // Donation fields are optional, no specific validation needed
 
     return { valid: errors.length === 0, errors };
   }

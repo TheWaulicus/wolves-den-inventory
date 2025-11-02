@@ -416,15 +416,47 @@ class GearForm {
         formData.donationDate = null;
       }
 
+      let gearItemId;
+      
       if (this.gearId) {
         // Update existing item
         await gearService.update(this.gearId, formData);
+        gearItemId = this.gearId;
         showSuccess(`${formData.brand} ${formData.model} updated successfully!`);
       } else {
         // Create new item
         const gearItem = new GearItem(formData);
-        await gearService.create(gearItem);
+        gearItemId = await gearService.create(gearItem);
         showSuccess(`${formData.brand} ${formData.model} added successfully!`);
+      }
+
+      // Create donation transaction if donation info provided
+      if (formData.donorId && formData.donationDate && !this.gearId) {
+        try {
+          // Get the donor (borrower)
+          const donor = await borrowerService.getById(formData.donorId);
+          // Get the gear item
+          const gearItem = await gearService.getById(gearItemId);
+          
+          if (donor && gearItem) {
+            // Create a special transaction record for the donation
+            await db.collection('donations').add({
+              gearItemId: gearItemId,
+              donorId: formData.donorId,
+              donorName: donor.getFullName(),
+              donationDate: formData.donationDate,
+              gearType: gearItem.gearType,
+              gearDescription: `${gearItem.brand} ${gearItem.model} - ${gearItem.size}`,
+              createdAt: new Date(),
+              notes: `Donation from ${donor.getFullName()}`
+            });
+            
+            console.log(`✅ Donation recorded for ${donor.getFullName()}`);
+          }
+        } catch (error) {
+          console.error('Error recording donation:', error);
+          // Don't fail the whole operation if donation record fails
+        }
       }
 
       this.close();

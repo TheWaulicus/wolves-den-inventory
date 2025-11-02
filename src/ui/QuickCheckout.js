@@ -68,7 +68,7 @@ class QuickCheckout {
                   <option value="">Select borrower...</option>
                   ${this.borrowers.map(b => `
                     <option value="${b.id}">
-                      ${b.getFullName()} ${b.jerseyNumber ? `(#${b.jerseyNumber})` : ''} - ${b.teamRole}
+                      ${b.getFullName()}
                     </option>
                   `).join('')}
                 </select>
