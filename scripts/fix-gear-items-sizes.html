@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fix Gear Items - Validate Sizes</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 6px;
+      border-left: 4px solid #3b82f6;
+    }
+    .section h3 {
+      margin-top: 0;
+      color: #1f2937;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .log {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 20px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      max-height: 500px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .log-entry {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .log-success { color: #10b981; }
+    .log-error { color: #ef4444; }
+    .log-warning { color: #f59e0b; }
+    .log-info { color: #3b82f6; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #1f2937;
+    }
+    .stat-label {
+      color: #6b7280;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    .form-input {
+      padding: 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .issues-container {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .issue-item {
+      padding: 12px;
+      margin: 8px 0;
+      background: white;
+      border-radius: 4px;
+      border-left: 4px solid #ef4444;
+      font-size: 14px;
+    }
+    .issue-item strong {
+      color: #1f2937;
+    }
+    .issue-details {
+      margin-top: 6px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Fix Gear Items - Validate Sizes</h1>
+    <p class="subtitle">Ensure all gear items have valid sizes based on their gear type configuration</p>
+
+    <!-- Authentication Section -->
+    <div class="section" id="auth-section">
+      <h3>🔐 Authentication Required</h3>
+      <p>You must be signed in as an admin to fix gear items.</p>
+      <div id="auth-status" style="margin-bottom: 15px;">
+        <span style="color: #ef4444;">❌ Not authenticated</span>
+      </div>
+      <div id="auth-form">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <input type="email" id="admin-email" placeholder="Admin email" class="form-input" style="flex: 1;">
+          <input type="password" id="admin-password" placeholder="Password" class="form-input" style="flex: 1;">
+        </div>
+        <button onclick="signIn()" id="signin-btn">🔑 Sign In</button>
+        <button onclick="signOut()" id="signout-btn" style="display: none; background: #6b7280;">🚪 Sign Out</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>📊 Current Status</h3>
+      <div class="stats" id="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="total-items">-</div>
+          <div class="stat-label">Total Items</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="valid-items">-</div>
+          <div class="stat-label">Valid Sizes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="invalid-items">-</div>
+          <div class="stat-label">Invalid/Missing</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="fixed-items">0</div>
+          <div class="stat-label">Fixed</div>
+        </div>
+      </div>
+
+      <button onclick="analyzeGearItems()" id="analyze-btn" disabled>🔍 Analyze Gear Items</button>
+      <button onclick="fixAllGearItems()" id="fix-btn" disabled>🔧 Fix All Issues</button>
+      <button onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <div class="section">
+      <h3>📋 Issues Found</h3>
+      <div id="issues-list" class="issues-container"></div>
+    </div>
+
+    <div class="section">
+      <h3>📝 Activity Log</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="../src/firebase-config.js"></script>
+  <script src="../src/models/GearItem.js"></script>
+  <script src="../src/models/GearType.js"></script>
+  <script src="../src/services/GearService.js"></script>
+  <script src="../src/services/GearTypeService.js"></script>
+
+  <script>
+    const authService = firebase.auth();
+    const gearService = new GearService();
+    const gearTypeService = new GearTypeService();
+    
+    let allGearItems = [];
+    let allGearTypes = [];
+    let gearTypesMap = new Map();
+    let invalidGearItems = [];
+    let currentUser = null;
+
+    // Monitor auth state
+    authService.onAuthStateChanged((user) => {
+      currentUser = user;
+      updateAuthUI();
+      if (user) {
+        log(`✅ Signed in as: ${user.email}`, 'success');
+      }
+    });
+
+    function updateAuthUI() {
+      const authStatus = document.getElementById('auth-status');
+      const signinBtn = document.getElementById('signin-btn');
+      const signoutBtn = document.getElementById('signout-btn');
+      const analyzeBtn = document.getElementById('analyze-btn');
+      const fixBtn = document.getElementById('fix-btn');
+
+      if (currentUser) {
+        authStatus.innerHTML = `<span style="color: #10b981;">✅ Signed in as: ${currentUser.email}</span>`;
+        signinBtn.style.display = 'none';
+        signoutBtn.style.display = 'inline-block';
+        analyzeBtn.disabled = false;
+        document.getElementById('admin-email').disabled = true;
+        document.getElementById('admin-password').disabled = true;
+      } else {
+        authStatus.innerHTML = `<span style="color: #ef4444;">❌ Not authenticated</span>`;
+        signinBtn.style.display = 'inline-block';
+        signoutBtn.style.display = 'none';
+        analyzeBtn.disabled = true;
+        fixBtn.disabled = true;
+        document.getElementById('admin-email').disabled = false;
+        document.getElementById('admin-password').disabled = false;
+      }
+    }
+
+    async function signIn() {
+      try {
+        const email = document.getElementById('admin-email').value;
+        const password = document.getElementById('admin-password').value;
+
+        if (!email || !password) {
+          log('❌ Please enter email and password', 'error');
+          return;
+        }
+
+        log('🔐 Signing in...', 'info');
+        await authService.signInWithEmailAndPassword(email, password);
+        log('✅ Sign in successful!', 'success');
+        
+        // Clear password field
+        document.getElementById('admin-password').value = '';
+        
+      } catch (error) {
+        log(`❌ Sign in failed: ${error.message}`, 'error');
+      }
+    }
+
+    async function signOut() {
+      try {
+        await authService.signOut();
+        log('✅ Signed out', 'info');
+      } catch (error) {
+        log(`❌ Sign out failed: ${error.message}`, 'error');
+      }
+    }
+
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = `[${timestamp}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(`[${type.toUpperCase()}]`, message);
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+    }
+
+    function updateStats(total, valid, invalid, fixed = 0) {
+      document.getElementById('total-items').textContent = total;
+      document.getElementById('valid-items').textContent = valid;
+      document.getElementById('invalid-items').textContent = invalid;
+      document.getElementById('fixed-items').textContent = fixed;
+    }
+
+    function displayIssues(items) {
+      const container = document.getElementById('issues-list');
+      container.innerHTML = '';
+
+      if (items.length === 0) {
+        container.innerHTML = '<p style="color: #10b981; padding: 12px;">✅ No issues found! All gear items have valid sizes.</p>';
+        return;
+      }
+
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'issue-item';
+        
+        const gearType = gearTypesMap.get(item.gearType);
+        const issues = item.issues.join(', ');
+        
+        div.innerHTML = `
+          <strong>${item.brand} ${item.model}</strong>
+          <div class="issue-details">
+            Type: ${gearType?.name || item.gearType} | 
+            Current Size: "${item.size}" | 
+            Status: ${item.status}
+          </div>
+          <div style="margin-top: 6px; color: #ef4444; font-size: 13px;">
+            ${issues}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function analyzeGearItems() {
+      try {
+        log('🔍 Starting analysis of gear items...', 'info');
+        document.getElementById('analyze-btn').disabled = true;
+
+        // Load gear types first
+        log('📦 Loading gear types...', 'info');
+        allGearTypes = await gearTypeService.getAll();
+        gearTypesMap.clear();
+        allGearTypes.forEach(gt => gearTypesMap.set(gt.id, gt));
+        log(`✅ Loaded ${allGearTypes.length} gear types`, 'success');
+
+        // Load all gear items
+        log('📦 Loading gear items...', 'info');
+        allGearItems = await gearService.getAll();
+        log(`✅ Loaded ${allGearItems.length} gear items`, 'success');
+
+        invalidGearItems = [];
+
+        // Check each gear item
+        for (const item of allGearItems) {
+          const issues = [];
+          const gearType = gearTypesMap.get(item.gearType);
+
+          if (!gearType) {
+            issues.push(`Gear type "${item.gearType}" not found`);
+          } else {
+            // Check if size is required
+            if (gearType.requiresSize) {
+              // Check if item has a size
+              if (!item.size || item.size.trim() === '') {
+                issues.push('Missing size (required)');
+              } else if (gearType.sizeOptions && gearType.sizeOptions.length > 0) {
+                // Check if size is in valid options
+                if (!gearType.sizeOptions.includes(item.size)) {
+                  issues.push(`Invalid size: not in [${gearType.sizeOptions.join(', ')}]`);
+                }
+              }
+            }
+          }
+
+          if (issues.length > 0) {
+            invalidGearItems.push({ ...item, issues });
+            log(`⚠️ ${item.brand} ${item.model}: ${issues.join(', ')}`, 'warning');
+          }
+        }
+
+        const validCount = allGearItems.length - invalidGearItems.length;
+        updateStats(allGearItems.length, validCount, invalidGearItems.length);
+        displayIssues(invalidGearItems);
+
+        if (invalidGearItems.length > 0) {
+          log(`❌ Found ${invalidGearItems.length} gear items with issues`, 'error');
+          document.getElementById('fix-btn').disabled = false;
+        } else {
+          log('✅ All gear items have valid sizes!', 'success');
+        }
+
+      } catch (error) {
+        log(`❌ Error analyzing gear items: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        document.getElementById('analyze-btn').disabled = false;
+      }
+    }
+
+    function findBestSizeMatch(currentSize, sizeOptions) {
+      if (!currentSize || sizeOptions.length === 0) return null;
+      
+      const sizeLower = currentSize.toLowerCase().trim();
+      
+      // Try exact match (case insensitive)
+      const exactMatch = sizeOptions.find(opt => opt.toLowerCase() === sizeLower);
+      if (exactMatch) return exactMatch;
+      
+      // Try partial match
+      const partialMatch = sizeOptions.find(opt => 
+        opt.toLowerCase().includes(sizeLower) || sizeLower.includes(opt.toLowerCase())
+      );
+      if (partialMatch) return partialMatch;
+      
+      // No match found
+      return null;
+    }
+
+    async function fixAllGearItems() {
+      try {
+        log('🔧 Starting to fix gear items...', 'info');
+        document.getElementById('fix-btn').disabled = true;
+
+        let fixedCount = 0;
+        let skippedCount = 0;
+
+        for (const item of invalidGearItems) {
+          try {
+            const gearType = gearTypesMap.get(item.gearType);
+            
+            if (!gearType) {
+              log(`⏭️ Skipping ${item.brand} ${item.model}: gear type not found`, 'warning');
+              skippedCount++;
+              continue;
+            }
+
+            const updates = {};
+            let changes = [];
+
+            // Fix missing or invalid size
+            if (gearType.requiresSize) {
+              if (!item.size || item.size.trim() === '') {
+                // Missing size - assign first available option
+                if (gearType.sizeOptions && gearType.sizeOptions.length > 0) {
+                  updates.size = gearType.sizeOptions[0];
+                  changes.push(`size: "" → "${updates.size}"`);
+                }
+              } else if (gearType.sizeOptions && gearType.sizeOptions.length > 0) {
+                // Invalid size - try to find best match
+                if (!gearType.sizeOptions.includes(item.size)) {
+                  const bestMatch = findBestSizeMatch(item.size, gearType.sizeOptions);
+                  if (bestMatch) {
+                    updates.size = bestMatch;
+                    changes.push(`size: "${item.size}" → "${bestMatch}"`);
+                  } else {
+                    // No match, keep current size and log warning
+                    log(`⚠️ ${item.brand} ${item.model}: Could not find match for size "${item.size}"`, 'warning');
+                    skippedCount++;
+                    continue;
+                  }
+                }
+              }
+            }
+
+            if (Object.keys(updates).length > 0) {
+              await gearService.update(item.id, updates);
+              fixedCount++;
+              log(`✅ Fixed ${item.brand} ${item.model}: ${changes.join(', ')}`, 'success');
+            }
+
+          } catch (error) {
+            log(`❌ Error fixing ${item.brand} ${item.model}: ${error.message}`, 'error');
+          }
+        }
+
+        log(`✅ Fixed ${fixedCount} gear items!`, 'success');
+        if (skippedCount > 0) {
+          log(`⚠️ Skipped ${skippedCount} items that could not be auto-fixed`, 'warning');
+        }
+        
+        updateStats(allGearItems.length, allGearItems.length - skippedCount, skippedCount, fixedCount);
+        
+        // Re-analyze to confirm
+        setTimeout(() => analyzeGearItems(), 1000);
+
+      } catch (error) {
+        log(`❌ Error during fix process: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        document.getElementById('fix-btn').disabled = false;
+      }
+    }
+
+    // Auto-run analysis on load (if authenticated)
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        log('🚀 Script loaded and ready', 'info');
+        if (currentUser) {
+          log('🔍 Running analysis...', 'info');
+          analyzeGearItems();
+        } else {
+          log('⚠️ Please sign in to analyze gear items', 'warning');
+        }
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
