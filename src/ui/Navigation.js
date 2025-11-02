@@ -169,13 +169,16 @@ class Navigation {
   }
 
   async loadTransactions() {
-    this.pageContainer.innerHTML = `
-      <div class="welcome-message">
-        <h2>↔️ Transactions</h2>
-        <p>Transaction history will be loaded here</p>
-        <p class="mt-2">Track all check-outs and returns.</p>
-      </div>
-    `;
+    if (typeof transactionManagement !== 'undefined') {
+      await transactionManagement.render();
+    } else {
+      this.pageContainer.innerHTML = `
+        <div class="welcome-message">
+          <h2>↔️ Transactions</h2>
+          <p>Transaction management not loaded</p>
+        </div>
+      `;
+    }
   }
 
   async loadGearTypes() {
