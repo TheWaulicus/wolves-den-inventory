@@ -204,7 +204,7 @@
 
   <script>
     const authService = firebase.auth();
-    const db = firebase.firestore();
+    const firestoreDb = firebase.firestore();
     const gearService = new GearService();
     const gearTypeService = new GearTypeService();
     let currentUser = null;
@@ -532,8 +532,8 @@
     }
 
     async function deleteCollection(collectionName) {
-      const snapshot = await db.collection(collectionName).get();
-      const batch = db.batch();
+      const snapshot = await firestoreDb.collection(collectionName).get();
+      const batch = firestoreDb.batch();
       let count = 0;
 
       snapshot.forEach((doc) => {
