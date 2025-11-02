@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Initialize Firebase with Sample Data</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    .status {
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+    }
+    .success { background: #e8f5e9; border-color: #4caf50; }
+    .error { background: #ffebee; border-color: #f44336; }
+    .warning { background: #fff3e0; border-color: #ff9800; }
+    button {
+      background: #2196f3;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+    }
+    button:hover { background: #1976d2; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .log {
+      background: #263238;
+      color: #aed581;
+      padding: 1rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 1rem;
+    }
+    .log div { margin: 0.25rem 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🐺 Initialize Firebase Sample Data</h1>
+    <p>This tool will populate your Firebase project with sample gear types, gear items, and borrowers.</p>
+
+    <div class="status" id="status">
+      <strong>Status:</strong> Ready to initialize
+    </div>
+
+    <div>
+      <button onclick="initializeGearTypes()">1. Add Gear Types</button>
+      <button onclick="initializeGearItems()">2. Add Gear Items</button>
+      <button onclick="initializeBorrowers()">3. Add Borrowers</button>
+      <button onclick="initializeAll()">Initialize All</button>
+      <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="../src/firebase-config.js"></script>
+
+  <!-- Models -->
+  <script src="../src/models/GearType.js"></script>
+  <script src="../src/models/GearItem.js"></script>
+  <script src="../src/models/Borrower.js"></script>
+
+  <!-- Sample Data -->
+  <script src="../src/data/defaultGearTypes.js"></script>
+  <script src="../src/data/sampleGearData.js"></script>
+  <script src="../src/data/sampleBorrowers.js"></script>
+
+  <script>
+    const statusDiv = document.getElementById('status');
+    const logDiv = document.getElementById('log');
+
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      const timestamp = new Date().toLocaleTimeString();
+      const icons = { success: '✅', error: '❌', warning: '⚠️', info: '📋' };
+      div.textContent = `[${timestamp}] ${icons[type] || '📋'} ${message}`;
+      logDiv.appendChild(div);
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(message);
+    }
+
+    function setStatus(message, type = 'info') {
+      statusDiv.innerHTML = `<strong>Status:</strong> ${message}`;
+      statusDiv.className = `status ${type}`;
+    }
+
+    function clearLog() {
+      logDiv.innerHTML = '';
+    }
+
+    async function initializeGearTypes() {
+      try {
+        log('Starting gear types initialization...');
+        setStatus('Initializing gear types...', 'info');
+
+        let added = 0;
+        for (const typeData of DEFAULT_GEAR_TYPES) {
+          const gearType = new GearType(typeData);
+          await db.collection('gearTypes').add(gearType.toFirestore());
+          log(`Added: ${gearType.name}`, 'success');
+          added++;
+        }
+
+        log(`Successfully added ${added} gear types`, 'success');
+        setStatus(`Added ${added} gear types successfully`, 'success');
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
+        setStatus('Error adding gear types', 'error');
+        console.error(error);
+      }
+    }
+
+    async function initializeGearItems() {
+      try {
+        log('Starting gear items initialization...');
+        setStatus('Initializing gear items...', 'info');
+
+        let added = 0;
+        for (const itemData of SAMPLE_GEAR_DATA) {
+          const gearItem = new GearItem(itemData);
+          await db.collection('gearItems').add(gearItem.toFirestore());
+          log(`Added: ${gearItem.brand} ${gearItem.gearType}`, 'success');
+          added++;
+        }
+
+        log(`Successfully added ${added} gear items`, 'success');
+        setStatus(`Added ${added} gear items successfully`, 'success');
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
+        setStatus('Error adding gear items', 'error');
+        console.error(error);
+      }
+    }
+
+    async function initializeBorrowers() {
+      try {
+        log('Starting borrowers initialization...');
+        setStatus('Initializing borrowers...', 'info');
+
+        let added = 0;
+        for (const borrowerData of SAMPLE_BORROWERS) {
+          const borrower = new Borrower(borrowerData);
+          await db.collection('borrowers').add(borrower.toFirestore());
+          log(`Added: ${borrower.getFullName()}`, 'success');
+          added++;
+        }
+
+        log(`Successfully added ${added} borrowers`, 'success');
+        setStatus(`Added ${added} borrowers successfully`, 'success');
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
+        setStatus('Error adding borrowers', 'error');
+        console.error(error);
+      }
+    }
+
+    async function initializeAll() {
+      if (!confirm('This will add all sample data to your Firebase project. Continue?')) {
+        return;
+      }
+
+      clearLog();
+      log('Starting full initialization...', 'info');
+      setStatus('Initializing all sample data...', 'info');
+
+      try {
+        await initializeGearTypes();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        await initializeGearItems();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        await initializeBorrowers();
+
+        log('All sample data initialized successfully!', 'success');
+        setStatus('All sample data initialized successfully!', 'success');
+      } catch (error) {
+        log(`Fatal error: ${error.message}`, 'error');
+        setStatus('Initialization failed', 'error');
+        console.error(error);
+      }
+    }
+
+    // Check Firebase connection on load
+    window.addEventListener('load', async () => {
+      try {
+        await db.collection('gearTypes').limit(1).get();
+        log('Connected to Firebase successfully', 'success');
+        setStatus('Connected to Firebase - Ready to initialize', 'success');
+      } catch (error) {
+        log(`Failed to connect to Firebase: ${error.message}`, 'error');
+        setStatus('Not connected to Firebase', 'error');
+      }
+    });
+  </script>
+</body>
+</html>

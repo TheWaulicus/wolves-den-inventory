@@ -4,13 +4,13 @@
 // Project Settings > General > Your apps > Web app > Config
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyCyYiYpGXM2W0zE9YlMceq-3_60W24ThsU",
+  authDomain: "wolves-den-8bb09.firebaseapp.com",
+  projectId: "wolves-den-8bb09",
+  storageBucket: "wolves-den-8bb09.firebasestorage.app",
+  messagingSenderId: "752150930439",
+  appId: "1:752150930439:web:5ffa035bb6bf4b4b8276a2",
+  measurementId: "G-LND7RR63XC"
 };
 
 // Initialize Firebase
