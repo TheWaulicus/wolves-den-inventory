@@ -184,14 +184,14 @@
   <script src="../src/services/GearTypeService.js"></script>
 
   <script>
-    const auth = firebase.auth();
+    const authService = firebase.auth();
     const gearTypeService = new GearTypeService();
     let allGearTypes = [];
     let invalidGearTypes = [];
     let currentUser = null;
 
     // Monitor auth state
-    auth.onAuthStateChanged((user) => {
+    authService.onAuthStateChanged((user) => {
       currentUser = user;
       updateAuthUI();
       if (user) {
@@ -235,7 +235,7 @@
         }
 
         log('🔐 Signing in...', 'info');
-        await auth.signInWithEmailAndPassword(email, password);
+        await authService.signInWithEmailAndPassword(email, password);
         log('✅ Sign in successful!', 'success');
         
         // Clear password field
@@ -248,7 +248,7 @@
 
     async function signOut() {
       try {
-        await auth.signOut();
+        await authService.signOut();
         log('✅ Signed out', 'info');
       } catch (error) {
         log(`❌ Sign out failed: ${error.message}`, 'error');
