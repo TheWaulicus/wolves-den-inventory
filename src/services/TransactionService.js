@@ -466,6 +466,10 @@ class TransactionService {
         query = query.where('borrowerId', '==', filters.borrowerId);
       }
 
+      if (filters.isOverdue !== undefined) {
+        query = query.where('isOverdue', '==', filters.isOverdue);
+      }
+
       query = query.orderBy('checkoutDate', 'desc');
 
       return query.onSnapshot(snapshot => {
