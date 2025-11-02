@@ -173,28 +173,65 @@ class BorrowerService {
   }
 
   async incrementItemCount(id) {
-    await this.collection.doc(id).update({
-      currentItemCount: firebase.firestore.FieldValue.increment(1),
-      totalBorrows: firebase.firestore.FieldValue.increment(1)
-    });
+    if (this.useFirebase) {
+      await this.collection.doc(id).update({
+        currentItemCount: firebase.firestore.FieldValue.increment(1),
+        totalBorrows: firebase.firestore.FieldValue.increment(1)
+      });
+    } else {
+      // Memory mode
+      const borrower = this.memoryStore.get(id);
+      if (borrower) {
+        borrower.currentItemCount = (borrower.currentItemCount || 0) + 1;
+        borrower.totalBorrows = (borrower.totalBorrows || 0) + 1;
+        borrower.updatedAt = new Date();
+      }
+    }
   }
 
   async decrementItemCount(id) {
-    await this.collection.doc(id).update({
-      currentItemCount: firebase.firestore.FieldValue.increment(-1)
-    });
+    if (this.useFirebase) {
+      await this.collection.doc(id).update({
+        currentItemCount: firebase.firestore.FieldValue.increment(-1)
+      });
+    } else {
+      // Memory mode
+      const borrower = this.memoryStore.get(id);
+      if (borrower) {
+        borrower.currentItemCount = Math.max(0, (borrower.currentItemCount || 0) - 1);
+        borrower.updatedAt = new Date();
+      }
+    }
   }
 
   async incrementOverdueCount(id) {
-    await this.collection.doc(id).update({
-      overdueCount: firebase.firestore.FieldValue.increment(1)
-    });
+    if (this.useFirebase) {
+      await this.collection.doc(id).update({
+        overdueCount: firebase.firestore.FieldValue.increment(1)
+      });
+    } else {
+      // Memory mode
+      const borrower = this.memoryStore.get(id);
+      if (borrower) {
+        borrower.overdueCount = (borrower.overdueCount || 0) + 1;
+        borrower.updatedAt = new Date();
+      }
+    }
   }
 
   async decrementOverdueCount(id) {
-    await this.collection.doc(id).update({
-      overdueCount: firebase.firestore.FieldValue.increment(-1)
-    });
+    if (this.useFirebase) {
+      await this.collection.doc(id).update({
+        overdueCount: firebase.firestore.FieldValue.increment(-1)
+      });
+    } else {
+      // Memory mode
+      const borrower = this.memoryStore.get(id);
+      if (borrower) {
+        borrower.overdueCount = Math.max(0, (borrower.overdueCount || 0) - 1);
+        borrower.updatedAt = new Date();
+      }
+    }
   }
 
   onSnapshot(id, callback) {
