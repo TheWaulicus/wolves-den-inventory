@@ -49,14 +49,8 @@ class BorrowerManagement {
                 <button class="btn btn-ghost filter-btn" data-filter="suspended">
                   Suspended
                 </button>
-                <button class="btn btn-ghost filter-btn" data-filter="player">
-                  Players
-                </button>
-                <button class="btn btn-ghost filter-btn" data-filter="coach">
-                  Coaches
-                </button>
-                <button class="btn btn-ghost filter-btn" data-filter="staff">
-                  Staff
+                <button class="btn btn-ghost filter-btn" data-filter="inactive">
+                  Inactive
                 </button>
               </div>
             </div>
@@ -124,13 +118,9 @@ class BorrowerManagement {
   filterBorrowers() {
     let filtered = [...this.borrowers];
 
-    // Apply status/role filter
+    // Apply status filter
     if (this.currentFilter !== 'all') {
-      if (['active', 'suspended', 'inactive'].includes(this.currentFilter)) {
-        filtered = filtered.filter(b => b.status === this.currentFilter);
-      } else {
-        filtered = filtered.filter(b => b.teamRole === this.currentFilter);
-      }
+      filtered = filtered.filter(b => b.status === this.currentFilter);
     }
 
     // Apply search
@@ -138,8 +128,7 @@ class BorrowerManagement {
       filtered = filtered.filter(b =>
         b.firstName.toLowerCase().includes(this.searchTerm) ||
         b.lastName.toLowerCase().includes(this.searchTerm) ||
-        b.email.toLowerCase().includes(this.searchTerm) ||
-        b.jerseyNumber.toLowerCase().includes(this.searchTerm)
+        b.email.toLowerCase().includes(this.searchTerm)
       );
     }
 
@@ -167,9 +156,8 @@ class BorrowerManagement {
           <thead>
             <tr>
               <th>Name</th>
-              <th>Jersey #</th>
-              <th>Role</th>
               <th>Email</th>
+              <th>Phone</th>
               <th>Status</th>
               <th>Items Out</th>
               <th>Overdue</th>
@@ -182,13 +170,8 @@ class BorrowerManagement {
                 <td>
                   <strong>${borrower.getFullName()}</strong>
                 </td>
-                <td>${borrower.jerseyNumber || '-'}</td>
-                <td>
-                  <span class="badge badge-${this.getRoleBadgeColor(borrower.teamRole)}">
-                    ${borrower.teamRole}
-                  </span>
-                </td>
                 <td>${borrower.email}</td>
+                <td>${borrower.phone || '-'}</td>
                 <td>
                   <span class="badge badge-${this.getStatusBadgeColor(borrower.status)}">
                     ${borrower.status}
@@ -273,16 +256,6 @@ class BorrowerManagement {
     `;
   }
 
-  getRoleBadgeColor(role) {
-    const colors = {
-      player: 'primary',
-      coach: 'success',
-      staff: 'warning',
-      volunteer: 'info'
-    };
-    return colors[role] || 'default';
-  }
-
   getStatusBadgeColor(status) {
     const colors = {
       active: 'success',
@@ -311,8 +284,8 @@ class BorrowerManagement {
     showInfo(`
       <h3>${borrower.getFullName()}</h3>
       <p><strong>Email:</strong> ${borrower.email}</p>
-      <p><strong>Role:</strong> ${borrower.teamRole}</p>
-      <p><strong>Jersey:</strong> ${borrower.jerseyNumber || 'N/A'}</p>
+      <p><strong>Phone:</strong> ${borrower.phone || 'N/A'}</p>
+      <p><strong>Status:</strong> ${borrower.status}</p>
       <p><strong>Items Out:</strong> ${borrower.currentItemCount || 0}</p>
       <p><strong>Total Borrows:</strong> ${borrower.totalBorrows || 0}</p>
       <p><strong>Overdue:</strong> ${borrower.overdueCount || 0}</p>

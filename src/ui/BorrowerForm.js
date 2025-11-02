@@ -28,7 +28,7 @@ class BorrowerForm {
     
     modalsContainer.innerHTML = `
       <div class="modal-overlay" id="borrower-form-modal">
-        <div class="modal-content modal-lg">
+        <div class="modal modal-lg">
           <div class="modal-header">
             <h2>${this.isEdit ? '✏️ Edit Borrower' : '➕ Add Borrower'}</h2>
             <button class="modal-close" onclick="borrowerForm.close()">×</button>
@@ -89,37 +89,9 @@ class BorrowerForm {
                   </div>
                 </div>
 
-                <!-- Team Information -->
+                <!-- Borrower Settings -->
                 <div class="form-section">
-                  <h3>Team Information</h3>
-                  
-                  <div class="form-group">
-                    <label for="teamRole">Role *</label>
-                    <select 
-                      id="teamRole" 
-                      name="teamRole" 
-                      class="form-control"
-                      required
-                    >
-                      <option value="">Select Role</option>
-                      <option value="player" ${this.borrower?.teamRole === 'player' ? 'selected' : ''}>Player</option>
-                      <option value="coach" ${this.borrower?.teamRole === 'coach' ? 'selected' : ''}>Coach</option>
-                      <option value="staff" ${this.borrower?.teamRole === 'staff' ? 'selected' : ''}>Staff</option>
-                      <option value="volunteer" ${this.borrower?.teamRole === 'volunteer' ? 'selected' : ''}>Volunteer</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="jerseyNumber">Jersey Number</label>
-                    <input 
-                      type="text" 
-                      id="jerseyNumber" 
-                      name="jerseyNumber" 
-                      class="form-control"
-                      value="${this.borrower?.jerseyNumber || ''}"
-                      placeholder="e.g. 7, 99"
-                    >
-                  </div>
+                  <h3>Borrower Settings</h3>
 
                   <div class="form-group">
                     <label for="status">Status *</label>
@@ -190,8 +162,6 @@ class BorrowerForm {
       lastName: formData.get('lastName').trim(),
       email: formData.get('email').trim(),
       phone: formData.get('phone').trim(),
-      teamRole: formData.get('teamRole'),
-      jerseyNumber: formData.get('jerseyNumber').trim(),
       status: formData.get('status'),
       maxItemLimit: parseInt(formData.get('maxItemLimit')) || 3,
       notes: formData.get('notes').trim()

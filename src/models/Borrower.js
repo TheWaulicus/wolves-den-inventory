@@ -4,7 +4,6 @@
  */
 
 class Borrower {
-  static VALID_ROLES = ['player', 'coach', 'staff', 'volunteer'];
   static VALID_STATUSES = ['active', 'suspended', 'inactive'];
   static CONTACT_METHODS = ['email', 'sms', 'both'];
 
@@ -14,8 +13,6 @@ class Borrower {
     this.lastName = data.lastName || '';
     this.email = data.email || '';
     this.phone = data.phone || '';
-    this.teamRole = data.teamRole || 'player';
-    this.jerseyNumber = data.jerseyNumber || '';
     this.status = data.status || 'active';
     this.maxItems = data.maxItems || 5;
     this.canBorrowUntil = data.canBorrowUntil || null;
@@ -38,8 +35,6 @@ class Borrower {
       lastName: this.lastName,
       email: this.email,
       phone: this.phone,
-      teamRole: this.teamRole,
-      jerseyNumber: this.jerseyNumber,
       status: this.status,
       maxItems: this.maxItems,
       currentItemCount: this.currentItemCount,
@@ -89,10 +84,6 @@ class Borrower {
 
     if (!this.email || !this.isValidEmail(this.email)) {
       errors.push('Valid email is required');
-    }
-
-    if (!Borrower.VALID_ROLES.includes(this.teamRole)) {
-      errors.push(`Team role must be one of: ${Borrower.VALID_ROLES.join(', ')}`);
     }
 
     if (!Borrower.VALID_STATUSES.includes(this.status)) {
