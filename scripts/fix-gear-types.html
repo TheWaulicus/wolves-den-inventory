@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fix Gear Types - Wolves Den</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    .status {
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+      border-left: 4px solid;
+    }
+    .success { background: #e8f5e9; border-color: #4caf50; }
+    .error { background: #ffebee; border-color: #f44336; }
+    .warning { background: #fff3e0; border-color: #ff9800; }
+    .info { background: #e3f2fd; border-color: #2196f3; }
+    button {
+      background: #2196f3;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+    }
+    button:hover { background: #1976d2; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .log {
+      background: #263238;
+      color: #aed581;
+      padding: 1rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 1rem;
+    }
+    .log div { margin: 0.25rem 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Fix Gear Type References</h1>
+    <p>Update all gear items to reference proper gear type IDs instead of names</p>
+
+    <div class="status info" id="status">
+      <strong>Status:</strong> Ready to analyze
+    </div>
+
+    <div>
+      <button onclick="analyzeItems()">🔍 Analyze Items</button>
+      <button id="fixBtn" onclick="fixItems()" disabled>🔧 Fix Items</button>
+      <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="../src/firebase-config.js"></script>
+
+  <script>
+    const statusDiv = document.getElementById('status');
+    const logDiv = document.getElementById('log');
+    const fixBtn = document.getElementById('fixBtn');
+
+    let itemsToFix = [];
+    let gearTypesMap = new Map();
+
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      const timestamp = new Date().toLocaleTimeString();
+      const icons = { success: '✅', error: '❌', warning: '⚠️', info: '📋' };
+      div.textContent = `[${timestamp}] ${icons[type] || '📋'} ${message}`;
+      logDiv.appendChild(div);
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(message);
+    }
+
+    function setStatus(message, type = 'info') {
+      statusDiv.innerHTML = `<strong>Status:</strong> ${message}`;
+      statusDiv.className = `status ${type}`;
+    }
+
+    function clearLog() {
+      logDiv.innerHTML = '';
+    }
+
+    async function analyzeItems() {
+      try {
+        log('Loading gear types...', 'info');
+        setStatus('Analyzing...', 'info');
+
+        // Load all gear types
+        const typesSnapshot = await db.collection('gearTypes').get();
+        gearTypesMap.clear();
+        
+        typesSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          gearTypesMap.set(data.name, doc.id);
+          log(`Gear Type: ${data.name} -> ${doc.id}`, 'info');
+        });
+
+        log(`Loaded ${gearTypesMap.size} gear types`, 'success');
+
+        // Load all gear items
+        const itemsSnapshot = await db.collection('gearItems').get();
+        itemsToFix = [];
+
+        log('Checking gear items...', 'info');
+        
+        for (const doc of itemsSnapshot.docs) {
+          const item = doc.data();
+          const currentType = item.gearType;
+          
+          // Check if gearType is already an ID (longer than typical name)
+          if (currentType && currentType.length > 20) {
+            log(`${doc.id}: Already has ID - ${currentType.substring(0, 20)}...`, 'info');
+            continue;
+          }
+          
+          // Check if we can find a matching gear type
+          if (currentType && gearTypesMap.has(currentType)) {
+            const correctId = gearTypesMap.get(currentType);
+            itemsToFix.push({
+              id: doc.id,
+              currentType: currentType,
+              correctId: correctId
+            });
+            log(`${doc.id}: "${currentType}" -> ${correctId}`, 'warning');
+          } else if (currentType) {
+            log(`${doc.id}: No match found for "${currentType}"`, 'error');
+          } else {
+            log(`${doc.id}: No gear type set`, 'error');
+          }
+        }
+
+        if (itemsToFix.length > 0) {
+          log(`Found ${itemsToFix.length} items that need fixing`, 'warning');
+          setStatus(`${itemsToFix.length} items need updating`, 'warning');
+          fixBtn.disabled = false;
+        } else {
+          log('All items are correct!', 'success');
+          setStatus('All items have correct gear type IDs', 'success');
+          fixBtn.disabled = true;
+        }
+
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
+        setStatus('Analysis failed', 'error');
+        console.error(error);
+      }
+    }
+
+    async function fixItems() {
+      if (itemsToFix.length === 0) {
+        setStatus('No items to fix', 'info');
+        return;
+      }
+
+      const confirmed = confirm(
+        `Update ${itemsToFix.length} gear items?\n\n` +
+        'This will change gearType from names to IDs.'
+      );
+
+      if (!confirmed) return;
+
+      try {
+        log(`Updating ${itemsToFix.length} items...`, 'info');
+        setStatus('Updating items...', 'info');
+
+        let updated = 0;
+        for (const item of itemsToFix) {
+          await db.collection('gearItems').doc(item.id).update({
+            gearType: item.correctId
+          });
+          log(`Updated ${item.id}: "${item.currentType}" -> ${item.correctId}`, 'success');
+          updated++;
+        }
+
+        log(`Successfully updated ${updated} items!`, 'success');
+        setStatus(`Updated ${updated} items successfully!`, 'success');
+        
+        itemsToFix = [];
+        fixBtn.disabled = true;
+
+      } catch (error) {
+        log(`Error updating: ${error.message}`, 'error');
+        setStatus('Update failed', 'error');
+        console.error(error);
+      }
+    }
+
+    // Auto-analyze on load
+    window.addEventListener('load', () => {
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+          log(`Signed in as: ${user.email}`, 'success');
+          setTimeout(() => analyzeItems(), 500);
+        } else {
+          setStatus('Please sign in first', 'error');
+          log('Not authenticated. Please sign in.', 'error');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
