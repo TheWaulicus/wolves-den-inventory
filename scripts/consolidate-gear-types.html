@@ -243,23 +243,36 @@
     let migrationMap = new Map(); // old ID -> new ID
 
     // Define the canonical gear type IDs (the ones we want to keep)
+    // Each canonical type should match EXACTLY with its name/ID patterns
     const CANONICAL_TYPES = {
+      // Junior Gear - separate from senior
       'chest-armour-jr': ['Chest Armour - Jr', 'chest-armour-jr'],
-      'elbows-jr': ['Elbows', 'elbows-jr', 'elbows'],
-      'hockey-pants-jr': ['Hockey Pants', 'hockey-pants-jr', 'pants'],
-      'chest-armour-senior': ['Chest Armour - Senior', 'Chest Armour', 'chest-armour-senior', 'chest-armour'],
-      'elbows-senior': ['Elbows', 'elbows-senior', 'elbows'],
-      'hockey-pants-senior': ['Hockey Pants', 'hockey-pants-senior', 'pants'],
+      'elbows-jr': ['Elbows', 'elbows-jr'],
+      'hockey-pants-jr': ['Hockey Pants', 'hockey-pants-jr'],
+      
+      // Senior Gear - separate from junior
+      'chest-armour-senior': ['Chest Armour - Senior', 'chest-armour-senior', 'chest-armour'],
+      'elbows-senior': ['Elbows', 'elbows-senior'],
+      'hockey-pants-senior': ['Hockey Pants', 'hockey-pants-senior'],
+      
+      // Goalie Gear - keep all variants separate
       'goalie-chest-armour-senior': ['Chest Armour - Senior', 'goalie-chest-armour-senior'],
       'goalie-chest-armour-int': ['Chest Armour - Int', 'goalie-chest-armour-int'],
+      'goalie-chest-armour-jr': ['Chest Armour - Jr', 'goalie-chest-armour-jr'],
       'goalie-pants': ['Goalie Pants', 'goalie-pants'],
       'goalie-helmets': ['Goalie Helmets', 'goalie-helmets'],
-      'goalie-pads-jr': ['Goalie Pads - Jr', 'goalie-pads-jr', 'goalie-pads'],
+      'goalie-pads-jr': ['Goalie Pads - Jr', 'goalie-pads-jr'],
+      
+      // Shared Gear
       'shin-pads': ['Shin Pads', 'shin-pads', 'shin-guards'],
       'hockey-skates': ['Hockey Skates', 'hockey-skates', 'skates'],
       'gloves': ['Gloves', 'gloves', 'hockey-gloves'],
-      'helmets-youth': ['Helmets - Youth', 'helmets-youth', 'helmet'],
-      'helmets-adult': ['Helmets - Adult', 'helmets-adult', 'helmet'],
+      
+      // Helmets - separate youth and adult
+      'helmets-youth': ['Helmets - Youth', 'helmets-youth'],
+      'helmets-adult': ['Helmets - Adult', 'helmets-adult'],
+      
+      // Accessories
       'metal-cages': ['Metal Cages', 'metal-cages'],
       'clear-visor': ['Clear Visor', 'clear-visor']
     };
@@ -347,13 +360,26 @@
       const nameLower = gearType.name.toLowerCase().trim();
       const idLower = gearType.id.toLowerCase();
 
+      // First, try exact ID match (highest priority)
+      for (const [canonicalId, patterns] of Object.entries(CANONICAL_TYPES)) {
+        if (idLower === canonicalId.toLowerCase()) {
+          return canonicalId;
+        }
+      }
+
+      // Then try pattern matching
       for (const [canonicalId, patterns] of Object.entries(CANONICAL_TYPES)) {
         for (const pattern of patterns) {
-          if (nameLower === pattern.toLowerCase() || idLower === pattern.toLowerCase()) {
+          const patternLower = pattern.toLowerCase();
+          
+          // Exact match on name or ID
+          if (nameLower === patternLower || idLower === patternLower) {
             return canonicalId;
           }
         }
       }
+
+      // No match found - this gear type is unique
       return null;
     }
 
@@ -389,10 +415,15 @@
           if (canonicalId) {
             if (gearType.id === canonicalId) {
               typesToKeep.add(gearType.id);
+              log(`  ✅ Keep: ${gearType.name} (${gearType.id})`, 'success');
             } else {
               typesToDelete.add(gearType.id);
               migrationMap.set(gearType.id, canonicalId);
+              log(`  🔄 Migrate: ${gearType.name} (${gearType.id}) → ${canonicalId}`, 'warning');
             }
+          } else {
+            // Gear type not in canonical list - might be unique or needs manual review
+            log(`  ⚠️ Unknown: ${gearType.name} (${gearType.id}) - not in canonical list`, 'info');
           }
         }
 
