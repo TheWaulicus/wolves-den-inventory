@@ -187,8 +187,9 @@ class TransactionService {
       throw new Error('Borrower cannot borrow items at this time');
     }
 
-    // Use Firestore transaction for atomic update
-    return db.runTransaction(async (transaction) => {
+    if (this.useFirebase) {
+      // Use Firestore transaction for atomic update
+      return db.runTransaction(async (transaction) => {
       // Create transaction record
       const newTransaction = new Transaction({
         gearItemId,
@@ -228,9 +229,43 @@ class TransactionService {
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      console.log('✅ Checkout completed:', transactionRef.id);
-      return transactionRef.id;
-    });
+        console.log('✅ Checkout completed:', transactionRef.id);
+        return transactionRef.id;
+      });
+    } else {
+      // Memory mode - simple sequential updates
+      const newTransaction = new Transaction({
+        gearItemId,
+        borrowerId,
+        gearType: gearItem.gearType,
+        gearBrand: gearItem.brand,
+        gearSize: gearItem.size,
+        borrowerName: borrower.getFullName(),
+        borrowerEmail: borrower.email,
+        checkoutDate: new Date(),
+        dueDate: new Date(dueDate),
+        expectedReturnDate: new Date(dueDate),
+        checkoutNotes: checkoutNotes || '',
+        checkedOutBy: checkedOutBy || 'system',
+        status: 'active',
+        isOverdue: false
+      });
+
+      const transactionId = await this.create(newTransaction);
+
+      // Update gear item
+      await gearService.update(gearItemId, {
+        status: 'checked-out',
+        currentBorrower: borrowerId,
+        lastCheckoutDate: new Date()
+      });
+
+      // Update borrower
+      await borrowerService.incrementItemCount(borrowerId);
+
+      console.log('✅ Checkout completed (memory):', transactionId);
+      return transactionId;
+    }
   }
 
   /**
@@ -241,7 +276,6 @@ class TransactionService {
    */
   async checkIn(transactionId, returnData) {
     const {
-      returnCondition,
       returnNotes,
       damageReported,
       damageDescription,
@@ -253,7 +287,8 @@ class TransactionService {
       throw new Error('Transaction not found');
     }
 
-    return db.runTransaction(async (transaction) => {
+    if (this.useFirebase) {
+      return db.runTransaction(async (transaction) => {
       // Update transaction
       const transactionRef = this.collection.doc(transactionId);
       transaction.update(transactionRef, {
@@ -290,8 +325,35 @@ class TransactionService {
 
       transaction.update(borrowerRef, updates);
 
-      console.log('✅ Check-in completed:', transactionId);
-    });
+        console.log('✅ Check-in completed:', transactionId);
+      });
+    } else {
+      // Memory mode - simple sequential updates
+      await this.update(transactionId, {
+        returnDate: new Date(),
+        returnNotes: returnNotes || '',
+        damageReported: damageReported || false,
+        damageDescription: damageDescription || '',
+        status: 'returned',
+        isOverdue: false,
+        returnedBy: returnedBy || 'system'
+      });
+
+      // Update gear item
+      await gearService.update(transactionDoc.gearItemId, {
+        status: damageReported ? 'maintenance' : 'available',
+        currentBorrower: null
+      });
+
+      // Update borrower
+      await borrowerService.decrementItemCount(transactionDoc.borrowerId);
+      
+      if (transactionDoc.isOverdue) {
+        await borrowerService.decrementOverdueCount(transactionDoc.borrowerId);
+      }
+
+      console.log('✅ Check-in completed (memory):', transactionId);
+    }
   }
 
   /**
