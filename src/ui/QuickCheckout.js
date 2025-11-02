@@ -34,9 +34,9 @@ class QuickCheckout {
       window.gearTypes?.find(t => t.id === this.gearItem.gearType) : null;
     const icon = gearType ? gearType.icon : '📦';
 
-    // Calculate default due date (14 days from now)
+    // Calculate default due date (12 months from now)
     const defaultDueDate = new Date();
-    defaultDueDate.setDate(defaultDueDate.getDate() + 14);
+    defaultDueDate.setMonth(defaultDueDate.getMonth() + 12);
 
     const modalHtml = `
       <div class="modal-overlay" onclick="if(event.target===this) quickCheckout.close()">
@@ -82,7 +82,7 @@ class QuickCheckout {
                        id="checkout-due-date" 
                        value="${DateHelpers.formatDate(defaultDueDate)}"
                        min="${DateHelpers.formatDate(new Date())}">
-                <span class="form-help">Default: 14 days from today if not specified</span>
+                <span class="form-help">Default: 12 months from today. Leave empty for no due date.</span>
               </div>
 
               <!-- Notes -->
@@ -120,18 +120,14 @@ class QuickCheckout {
         return;
       }
 
-      // Use provided due date or default to 14 days from now
-      let dueDate;
+      // Use provided due date or null if not specified
+      let dueDate = null;
       if (dueDateStr) {
         dueDate = new Date(dueDateStr);
         if (dueDate < new Date()) {
           showError('Due date cannot be in the past');
           return;
         }
-      } else {
-        // Default to 14 days from now
-        dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + 14);
       }
 
       // Get borrower
