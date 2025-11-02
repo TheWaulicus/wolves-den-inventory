@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fix Gear Types - Categories and Sizes</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 6px;
+      border-left: 4px solid #3b82f6;
+    }
+    .section h3 {
+      margin-top: 0;
+      color: #1f2937;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .log {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 20px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      max-height: 500px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .log-entry {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .log-success { color: #10b981; }
+    .log-error { color: #ef4444; }
+    .log-warning { color: #f59e0b; }
+    .log-info { color: #3b82f6; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #1f2937;
+    }
+    .stat-label {
+      color: #6b7280;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    .gear-type-list {
+      margin-top: 15px;
+    }
+    .gear-type-item {
+      padding: 10px;
+      margin: 5px 0;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+    }
+    .gear-type-item.invalid {
+      border-left: 4px solid #ef4444;
+    }
+    .gear-type-item.valid {
+      border-left: 4px solid #10b981;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Fix Gear Types - Categories & Sizes</h1>
+    <p class="subtitle">Validate and fix gear types with missing or invalid categories and size configurations</p>
+
+    <div class="section">
+      <h3>📊 Current Status</h3>
+      <div class="stats" id="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="total-count">-</div>
+          <div class="stat-label">Total Gear Types</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="valid-count">-</div>
+          <div class="stat-label">Valid</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="invalid-count">-</div>
+          <div class="stat-label">Need Fixing</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="fixed-count">0</div>
+          <div class="stat-label">Fixed</div>
+        </div>
+      </div>
+
+      <button onclick="analyzeGearTypes()" id="analyze-btn">🔍 Analyze Gear Types</button>
+      <button onclick="fixAllGearTypes()" id="fix-btn" disabled>🔧 Fix All Issues</button>
+      <button onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <div class="section">
+      <h3>📋 Issues Found</h3>
+      <div id="issues-list" class="gear-type-list"></div>
+    </div>
+
+    <div class="section">
+      <h3>📝 Activity Log</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="../src/firebase-config.js"></script>
+  <script src="../src/models/GearType.js"></script>
+  <script src="../src/services/GearTypeService.js"></script>
+
+  <script>
+    const gearTypeService = new GearTypeService();
+    let allGearTypes = [];
+    let invalidGearTypes = [];
+
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = `[${timestamp}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(`[${type.toUpperCase()}]`, message);
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+    }
+
+    function updateStats(total, valid, invalid, fixed = 0) {
+      document.getElementById('total-count').textContent = total;
+      document.getElementById('valid-count').textContent = valid;
+      document.getElementById('invalid-count').textContent = invalid;
+      document.getElementById('fixed-count').textContent = fixed;
+    }
+
+    function displayIssues(gearTypes) {
+      const container = document.getElementById('issues-list');
+      container.innerHTML = '';
+
+      if (gearTypes.length === 0) {
+        container.innerHTML = '<p style="color: #10b981;">✅ No issues found! All gear types are valid.</p>';
+        return;
+      }
+
+      gearTypes.forEach(gt => {
+        const div = document.createElement('div');
+        div.className = 'gear-type-item invalid';
+        
+        const issues = [];
+        if (!GearType.VALID_CATEGORIES.includes(gt.category)) {
+          issues.push(`❌ Invalid category: "${gt.category}"`);
+        }
+        if (!GearType.SIZE_TYPES.includes(gt.sizeType)) {
+          issues.push(`❌ Invalid size type: "${gt.sizeType}"`);
+        }
+        if (gt.requiresSize && (!gt.sizeOptions || gt.sizeOptions.length === 0)) {
+          issues.push(`⚠️ Requires size but has no size options`);
+        }
+
+        div.innerHTML = `
+          <strong>${gt.icon || '📦'} ${gt.name}</strong>
+          <div style="margin-top: 5px; color: #6b7280; font-size: 14px;">
+            Category: ${gt.category} | Size Type: ${gt.sizeType} | 
+            Sizes: ${gt.sizeOptions?.length || 0} options
+          </div>
+          <div style="margin-top: 8px; color: #ef4444; font-size: 13px;">
+            ${issues.join('<br>')}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function analyzeGearTypes() {
+      try {
+        log('🔍 Starting analysis of gear types...', 'info');
+        document.getElementById('analyze-btn').disabled = true;
+
+        // Fetch all gear types
+        allGearTypes = await gearTypeService.getAll();
+        log(`📦 Found ${allGearTypes.length} gear types in database`, 'info');
+
+        invalidGearTypes = [];
+
+        // Check each gear type
+        for (const gt of allGearTypes) {
+          const issues = [];
+          
+          // Check category
+          if (!GearType.VALID_CATEGORIES.includes(gt.category)) {
+            issues.push(`Invalid category: ${gt.category}`);
+          }
+
+          // Check size type
+          if (!GearType.SIZE_TYPES.includes(gt.sizeType)) {
+            issues.push(`Invalid size type: ${gt.sizeType}`);
+          }
+
+          // Check size options
+          if (gt.requiresSize && (!gt.sizeOptions || gt.sizeOptions.length === 0)) {
+            issues.push('Requires size but has no size options');
+          }
+
+          if (issues.length > 0) {
+            invalidGearTypes.push(gt);
+            log(`⚠️ ${gt.name}: ${issues.join(', ')}`, 'warning');
+          }
+        }
+
+        const validCount = allGearTypes.length - invalidGearTypes.length;
+        updateStats(allGearTypes.length, validCount, invalidGearTypes.length);
+        displayIssues(invalidGearTypes);
+
+        if (invalidGearTypes.length > 0) {
+          log(`❌ Found ${invalidGearTypes.length} gear types with issues`, 'error');
+          document.getElementById('fix-btn').disabled = false;
+        } else {
+          log('✅ All gear types are valid!', 'success');
+        }
+
+      } catch (error) {
+        log(`❌ Error analyzing gear types: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        document.getElementById('analyze-btn').disabled = false;
+      }
+    }
+
+    function inferCategoryFromName(name) {
+      const nameLower = name.toLowerCase();
+      
+      if (nameLower.includes('skate')) return 'footwear';
+      if (nameLower.includes('stick')) return 'sticks';
+      if (nameLower.includes('jersey') || nameLower.includes('sock')) return 'clothing';
+      
+      // Protective gear
+      const protectiveKeywords = ['pad', 'helmet', 'armour', 'armor', 'guard', 'visor', 
+                                   'cage', 'glove', 'pant', 'elbow', 'shin', 'chest',
+                                   'goalie', 'blocker', 'catch'];
+      if (protectiveKeywords.some(kw => nameLower.includes(kw))) return 'protective';
+      
+      return 'accessories';
+    }
+
+    function inferSizeTypeFromName(name) {
+      const nameLower = name.toLowerCase();
+      
+      // Skates use numeric sizes
+      if (nameLower.includes('skate')) return 'numeric';
+      
+      // Most protective gear uses alpha sizes
+      if (nameLower.includes('helmet') || nameLower.includes('pad') || 
+          nameLower.includes('armour') || nameLower.includes('armor') ||
+          nameLower.includes('pant') || nameLower.includes('jersey')) {
+        return 'alpha';
+      }
+      
+      // Gloves, sticks, goalie gear use custom sizes
+      if (nameLower.includes('glove') || nameLower.includes('stick') || 
+          nameLower.includes('goalie') || nameLower.includes('blocker')) {
+        return 'custom';
+      }
+      
+      return 'alpha'; // Default to alpha
+    }
+
+    function getDefaultSizeOptions(sizeType, name = '') {
+      const nameLower = name.toLowerCase();
+      
+      switch (sizeType) {
+        case 'numeric':
+          if (nameLower.includes('skate')) {
+            return ['6.0', '6.5', '7.0', '7.5', '8.0', '8.5', '9.0', '9.5', '10.0', '10.5', '11.0', '11.5', '12.0', '12.5', '13.0'];
+          }
+          return ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15'];
+          
+        case 'alpha':
+          if (nameLower.includes('youth') || nameLower.includes('jr')) {
+            return ['YXS', 'YS', 'YM', 'YL', 'YXL'];
+          }
+          return ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+          
+        case 'custom':
+          if (nameLower.includes('glove') && !nameLower.includes('goalie')) {
+            return ['12"', '13"', '14"', '15"'];
+          }
+          if (nameLower.includes('stick')) {
+            return ['Youth 46"', 'Junior 52"', 'Intermediate 54"', 'Senior 56"', 'Senior 57"', 'Senior 58"'];
+          }
+          if (nameLower.includes('goalie')) {
+            if (nameLower.includes('pad') || nameLower.includes('leg')) {
+              return ['26"', '28"', '30"', '32"', '34"', '36"'];
+            }
+            return ['Junior', 'Intermediate', 'Senior'];
+          }
+          return ['Junior', 'Intermediate', 'Senior'];
+          
+        case 'none':
+          return [];
+          
+        default:
+          return ['XS', 'S', 'M', 'L', 'XL'];
+      }
+    }
+
+    async function fixAllGearTypes() {
+      try {
+        log('🔧 Starting to fix gear types...', 'info');
+        document.getElementById('fix-btn').disabled = true;
+
+        let fixedCount = 0;
+
+        for (const gt of invalidGearTypes) {
+          try {
+            const updates = {};
+            let changes = [];
+
+            // Fix category
+            if (!GearType.VALID_CATEGORIES.includes(gt.category)) {
+              const newCategory = inferCategoryFromName(gt.name);
+              updates.category = newCategory;
+              changes.push(`category: ${gt.category} → ${newCategory}`);
+            }
+
+            // Fix size type
+            if (!GearType.SIZE_TYPES.includes(gt.sizeType)) {
+              const newSizeType = inferSizeTypeFromName(gt.name);
+              updates.sizeType = newSizeType;
+              changes.push(`sizeType: ${gt.sizeType} → ${newSizeType}`);
+            }
+
+            // Fix size options
+            const finalSizeType = updates.sizeType || gt.sizeType;
+            if (gt.requiresSize && (!gt.sizeOptions || gt.sizeOptions.length === 0)) {
+              const newSizeOptions = getDefaultSizeOptions(finalSizeType, gt.name);
+              updates.sizeOptions = newSizeOptions;
+              changes.push(`sizeOptions: added ${newSizeOptions.length} options`);
+            }
+
+            if (Object.keys(updates).length > 0) {
+              await gearTypeService.update(gt.id, updates);
+              fixedCount++;
+              log(`✅ Fixed ${gt.name}: ${changes.join(', ')}`, 'success');
+            }
+
+          } catch (error) {
+            log(`❌ Error fixing ${gt.name}: ${error.message}`, 'error');
+          }
+        }
+
+        log(`✅ Fixed ${fixedCount} gear types!`, 'success');
+        updateStats(allGearTypes.length, allGearTypes.length, 0, fixedCount);
+        
+        // Re-analyze to confirm
+        setTimeout(() => analyzeGearTypes(), 1000);
+
+      } catch (error) {
+        log(`❌ Error during fix process: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        document.getElementById('fix-btn').disabled = false;
+      }
+    }
+
+    // Auto-run analysis on load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        log('🚀 Ready to analyze gear types', 'info');
+        analyzeGearTypes();
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
