@@ -5,8 +5,30 @@
 
 class TransactionService {
   constructor() {
-    this.collection = db.collection('transactions');
-    this.historyCollection = db.collection('transactionHistory');
+    // Check if Firebase is properly configured
+    this.useFirebase = false;
+    
+    if (typeof db !== 'undefined' && typeof firebase !== 'undefined') {
+      try {
+        const config = firebase.app().options;
+        if (config.projectId && config.projectId !== 'YOUR_PROJECT_ID') {
+          this.useFirebase = true;
+          this.collection = db.collection('transactions');
+          this.historyCollection = db.collection('transactionHistory');
+          console.log('✅ TransactionService connected to Firebase');
+        }
+      } catch (error) {
+        console.log('⚠️ Firebase not properly configured, using memory mode');
+      }
+    }
+    
+    // In-memory storage fallback
+    this.memoryStore = new Map();
+    this.historyStore = new Map();
+    
+    if (!this.useFirebase) {
+      console.log('⚠️ TransactionService running in memory mode (Firebase not configured)');
+    }
   }
 
   async create(transaction) {
@@ -15,22 +37,49 @@ class TransactionService {
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
-    const docRef = await this.collection.add(transaction.toFirestore());
-    console.log('✅ Transaction created:', docRef.id);
-    return docRef.id;
+    if (this.useFirebase) {
+      const docRef = await this.collection.add(transaction.toFirestore());
+      console.log('✅ Transaction created:', docRef.id);
+      return docRef.id;
+    } else {
+      // Memory mode
+      const id = `trans-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      transaction.id = id;
+      transaction.createdAt = new Date();
+      transaction.updatedAt = new Date();
+      this.memoryStore.set(id, transaction);
+      console.log('✅ Transaction created (memory):', id);
+      return id;
+    }
   }
 
   async getById(id) {
-    const doc = await this.collection.doc(id).get();
-    return Transaction.fromFirestore(doc);
+    if (this.useFirebase) {
+      const doc = await this.collection.doc(id).get();
+      return Transaction.fromFirestore(doc);
+    } else {
+      return this.memoryStore.get(id) || null;
+    }
   }
 
   async update(id, updates) {
-    await this.collection.doc(id).update({
-      ...updates,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    console.log('✅ Transaction updated:', id);
+    if (this.useFirebase) {
+      await this.collection.doc(id).update({
+        ...updates,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('✅ Transaction updated:', id);
+    } else {
+      // Memory mode
+      const existing = this.memoryStore.get(id);
+      if (existing) {
+        Object.assign(existing, updates);
+        existing.updatedAt = new Date();
+        console.log('✅ Transaction updated (memory):', id);
+      } else {
+        throw new Error('Transaction not found');
+      }
+    }
   }
 
   async delete(id) {
