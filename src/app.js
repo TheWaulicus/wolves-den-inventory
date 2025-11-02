@@ -115,11 +115,14 @@ class WolvesDenApp {
   }
 
   showLoginModal() {
+    // Don't show if already exists
+    if (document.getElementById('login-modal')) return;
+    
     const modal = document.createElement('div');
-    modal.className = 'modal-overlay active';
+    modal.className = 'modal-overlay';
     modal.id = 'login-modal';
     modal.innerHTML = `
-      <div class="modal-content">
+      <div class="modal">
         <div class="modal-header">
           <h2>🔐 Sign In to Wolves Den</h2>
         </div>
@@ -131,7 +134,7 @@ class WolvesDenApp {
                 type="email" 
                 id="login-email" 
                 class="form-control" 
-                placeholder="admin@wolves.com"
+                placeholder="wolves@icezoo.com"
                 required
                 autofocus
               >
@@ -142,14 +145,14 @@ class WolvesDenApp {
                 type="password" 
                 id="login-password" 
                 class="form-control" 
-                placeholder="Password"
+                placeholder="Enter your password"
                 required
               >
             </div>
             <div id="login-error" class="alert alert-error" style="display: none; margin-top: 1rem;">
               <div class="alert-content" id="login-error-message"></div>
             </div>
-            <div class="modal-footer" style="margin-top: 1.5rem;">
+            <div class="modal-footer" style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
               <button type="button" class="btn btn-ghost" onclick="app.closeLoginModal()">
                 Continue in Demo Mode
               </button>
@@ -163,6 +166,9 @@ class WolvesDenApp {
     `;
     
     document.body.appendChild(modal);
+    
+    // Trigger animation
+    setTimeout(() => modal.classList.add('active'), 10);
   }
 
   async handleLogin(event) {
