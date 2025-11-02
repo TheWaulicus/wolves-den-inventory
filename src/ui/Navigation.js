@@ -136,13 +136,18 @@ class Navigation {
   }
 
   async loadDashboard() {
-    this.pageContainer.innerHTML = `
-      <div class="welcome-message">
-        <h2>📊 Dashboard</h2>
-        <p>Dashboard content will be loaded here</p>
-        <p class="mt-2">This is where you'll see inventory statistics, recent activity, and alerts.</p>
-      </div>
-    `;
+    if (typeof Dashboard !== 'undefined') {
+      window.dashboard = new Dashboard();
+      await dashboard.render();
+    } else {
+      this.pageContainer.innerHTML = `
+        <div class="welcome-message">
+          <h2>📊 Dashboard</h2>
+          <p>Dashboard content will be loaded here</p>
+          <p class="mt-2">This is where you'll see inventory statistics, recent activity, and alerts.</p>
+        </div>
+      `;
+    }
   }
 
   async loadInventory() {
@@ -159,13 +164,21 @@ class Navigation {
   }
 
   async loadBorrowers() {
-    this.pageContainer.innerHTML = `
-      <div class="welcome-message">
-        <h2>👥 Borrowers</h2>
-        <p>Borrower management will be loaded here</p>
-        <p class="mt-2">Manage players and staff who can borrow equipment.</p>
-      </div>
-    `;
+    if (typeof BorrowerManagement !== 'undefined') {
+      // Cleanup previous instance
+      if (window.borrowerManagement?.cleanup) {
+        window.borrowerManagement.cleanup();
+      }
+      window.borrowerManagement = new BorrowerManagement();
+      await borrowerManagement.render();
+    } else {
+      this.pageContainer.innerHTML = `
+        <div class="welcome-message">
+          <h2>👥 Borrowers</h2>
+          <p>Borrower management not loaded</p>
+        </div>
+      `;
+    }
   }
 
   async loadTransactions() {

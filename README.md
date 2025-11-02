@@ -2,6 +2,10 @@
 
 Ice hockey gear inventory management system for the **Ice Zoo Wolves**.
 
+🌐 **Live Demo**: [https://thewaulicus.github.io/wolves-den-inventory/](https://thewaulicus.github.io/wolves-den-inventory/)
+
+> **Note**: The live demo runs in memory mode (no Firebase configuration). All data is stored locally in your browser and will be reset on page reload.
+
 [![Firebase](https://img.shields.io/badge/Firebase-v8-orange)](https://firebase.google.com/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -127,8 +131,47 @@ wolves-den-inventory/
 - **Authentication**: Firebase Authentication
 - **Frontend**: Vanilla JavaScript + HTML/CSS
 - **Backend**: Firebase Cloud Functions (Python)
-- **Hosting**: Firebase Hosting
+- **Hosting**: Firebase Hosting / GitHub Pages
 - **Testing**: Jest, pytest, Firebase Emulator
+
+## 🚀 Deployment
+
+### GitHub Pages (Demo Mode)
+
+The app automatically deploys to GitHub Pages on every push to `main`:
+
+1. **Automatic Deployment**: GitHub Actions workflow builds and deploys
+2. **Access**: Visit [https://thewaulicus.github.io/wolves-den-inventory/](https://thewaulicus.github.io/wolves-den-inventory/)
+3. **Memory Mode**: Runs without Firebase (data stored in browser memory)
+
+### Firebase Hosting (Production)
+
+For production deployment with full Firebase features:
+
+```bash
+# Configure Firebase
+firebase init hosting
+
+# Deploy to Firebase
+firebase deploy --only hosting
+
+# Deploy everything (hosting, Firestore rules, storage)
+firebase deploy
+```
+
+### Manual Setup
+
+To run locally without Firebase:
+
+```bash
+# Serve with any HTTP server
+python3 -m http.server 8080
+
+# Or use Live Server in VS Code
+# Open index.html and click "Go Live"
+```
+
+The app will work in memory mode - perfect for testing and development!
 
 ## 📖 Documentation
 
