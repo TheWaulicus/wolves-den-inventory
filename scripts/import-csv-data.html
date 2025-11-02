@@ -217,91 +217,51 @@
         const lines = content.split('\n');
         parsedData = [];
         
-        let currentSection = ''; // Junior, Senior, Goalie
-        let categoryCol0 = '';
-        let categoryCol2 = '';
-        let categoryCol5 = '';
+        let currentSection = ''; // Junior, Senior, Goalie, Helmets
+        let currentCategory = '';
         
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim();
-          if (!line || line === ',,,,,,,') continue;
+          if (!line) continue;
           
-          const cells = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+          // Split and clean cells
+          const cells = line.split(/,|\t/).map(c => c.trim().replace(/^"|"$/g, ''));
           
-          // Detect section headers
-          if (cells[0] && cells[0].includes('Junior Gear')) {
-            currentSection = 'Junior';
-            categoryCol0 = categoryCol2 = categoryCol5 = '';
-            continue;
-          } else if (cells[0] && cells[0].includes('Senior Gear')) {
-            currentSection = 'Senior';
-            categoryCol0 = categoryCol2 = categoryCol5 = '';
-            continue;
-          } else if (cells[0] && cells[0].includes('Goalie Gear')) {
-            currentSection = 'Goalie';
-            categoryCol0 = categoryCol2 = categoryCol5 = '';
+          // Detect section headers (centered titles in image)
+          if (cells[0] && cells[0].match(/Junior Gear|Senior Gear|Goalie Gear|Helmets/i)) {
+            const match = cells[0].match(/(Junior|Senior|Goalie|Helmets)/i);
+            currentSection = match ? match[1] : '';
+            currentCategory = '';
+            log(`Section: ${currentSection}`, 'info');
             continue;
           }
           
-          // Column 0-1: First column group
-          if (cells[0]) {
-            const qty = parseInt(cells[1]);
-            if (isNaN(qty) || qty === 0) {
-              // It's a category header
-              if (cells[0]) categoryCol0 = cells[0];
-            } else if (qty > 0 && categoryCol0) {
-              // It's an item
+          // Parse main category headers (bold text in left column)
+          if (cells[0] && !cells[1] && cells[0].match(/Chest Armour|Elbows|Hockey Pants|Shin Pads|Hockey Skates|Gloves|Goalie|Helmets|Metal Cages|Clear Visor/i)) {
+            currentCategory = cells[0];
+            log(`Category: ${currentCategory}`, 'info');
+            continue;
+          }
+          
+          // Parse items with quantities
+          // Pattern: Size, Quantity
+          for (let col = 0; col < cells.length - 1; col += 2) {
+            const size = cells[col];
+            const qty = parseInt(cells[col + 1]);
+            
+            if (size && !isNaN(qty) && qty > 0 && currentCategory) {
               parsedData.push({
-                section: currentSection,
-                category: categoryCol0,
-                size: cells[0],
+                section: currentSection || 'General',
+                category: currentCategory,
+                size: size,
                 quantity: qty
               });
-            }
-          }
-          
-          // Column 2-4: Second column group
-          if (cells[2]) {
-            // Check if column 2 is a category header
-            if (!cells[3] || isNaN(parseInt(cells[4])) || parseInt(cells[4]) === 0) {
-              categoryCol2 = cells[2];
-            }
-          }
-          
-          if (cells[3]) {
-            const qty = parseInt(cells[4]);
-            if (!isNaN(qty) && qty > 0 && categoryCol2) {
-              parsedData.push({
-                section: currentSection,
-                category: categoryCol2,
-                size: cells[3],
-                quantity: qty
-              });
-            }
-          }
-          
-          // Column 5-7: Third column group
-          if (cells[5]) {
-            // Check if column 5 is a category header
-            if (!cells[6] || isNaN(parseInt(cells[7])) || parseInt(cells[7]) === 0) {
-              categoryCol5 = cells[5];
-            }
-          }
-          
-          if (cells[6]) {
-            const qty = parseInt(cells[7]);
-            if (!isNaN(qty) && qty > 0 && categoryCol5) {
-              parsedData.push({
-                section: currentSection,
-                category: categoryCol5,
-                size: cells[6],
-                quantity: qty
-              });
+              log(`  Added: ${currentCategory} ${size} x${qty}`, 'success');
             }
           }
         }
         
-        log(`Parsed ${parsedData.length} items from CSV`, 'success');
+        log(`Parsed ${parsedData.length} items total`, 'success');
         setStatus(`Found ${parsedData.length} inventory items`, 'success');
         
         showPreview();
