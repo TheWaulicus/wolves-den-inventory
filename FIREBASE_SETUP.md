@@ -67,7 +67,7 @@ Click "Initialize All" to add:
    {
      "email": "admin@example.com",
      "role": "admin",
-     "createdAt": "2024-11-20T12:00:00Z"
+     "createdAt": "2025-11-02T12:00:00Z"
    }
    ```
 

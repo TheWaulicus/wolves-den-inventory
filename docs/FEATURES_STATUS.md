@@ -204,6 +204,6 @@ All features work in memory mode except:
 
 ---
 
-**Last Updated**: November 2024  
+**Last Updated**: November 2025  
 **Version**: 0.9.0 (Beta)  
 **Status**: Ready for GitHub Pages deployment 🚀
